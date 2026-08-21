@@ -1,0 +1,31 @@
+# Credenciais - NUNCA versionar
+*.env
+.env
+service-account*.json
+gcp-key*.json
+*.pem
+*.key
+profiles.yml
+
+# Ambiente Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# dbt
+target/
+logs/
+dbt_packages/
+
+# Power BI (binário, não versiona - uma dona por vez)
+*.pbix
+
+# Dados brutos baixados do portal (não versionar dado, só código)
+/dados/
+*.csv
+
+# SO / editor
+.DS_Store
+Thumbs.db
+.vscode/

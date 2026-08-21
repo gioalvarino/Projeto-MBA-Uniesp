@@ -1,0 +1,40 @@
+name: Pipeline dbt
+
+# Este workflow roda o dbt (transformação), não a ingestão — os CSVs
+# mensais são baixados e carregados manualmente com
+# `ingestion/load_pni_csv.py` (ver ADR 0002 sobre por que a ingestão não é
+# automatizada ainda: falta uma URL estável de download por mês).
+
+on:
+  schedule:
+    - cron: "0 12 * * *" # ajustar para a cadência que o trio decidir
+  workflow_dispatch: {}
+
+jobs:
+  dbt-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      # TODO: criar o secret GCP_SA_KEY (chave da service account
+      # github-actions, com Data Editor + Job User) e montar o profiles.yml
+      # a partir dele antes de habilitar este job de verdade.
+      - name: dbt build
+        run: |
+          echo "TODO: configurar profiles.yml a partir do secret GCP_SA_KEY e rodar: dbt build --target ci"
+
+      - name: dbt docs generate
+        run: |
+          echo "TODO: dbt docs generate"
+
+      # TODO: publicar o conteúdo de dbt/target/ no GitHub Pages
+      - name: Publicar dbt docs no GitHub Pages
+        run: |
+          echo "TODO: publicar docs no GitHub Pages"

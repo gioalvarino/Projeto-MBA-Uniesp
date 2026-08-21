@@ -1,0 +1,2 @@
+google-cloud-bigquery>=3.25
+dbt-bigquery>=1.9,<1.11
