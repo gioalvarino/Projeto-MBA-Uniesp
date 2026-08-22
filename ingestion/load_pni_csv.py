@@ -151,9 +151,22 @@ def hash_arquivo(caminho: Path) -> str:
     return h.hexdigest()
 
 
+MESES_PT = {
+    "jan": "01", "fev": "02", "mar": "03", "abr": "04",
+    "mai": "05", "jun": "06", "jul": "07", "ago": "08",
+    "set": "09", "out": "10", "nov": "11", "dez": "12",
+}
+
+
 def inferir_mes(caminho: Path) -> str | None:
-    """Tenta achar AAAA-MM no nome do arquivo (aceita 2026_08, 202608, 08-2026)."""
-    nome = caminho.stem
+    """Tenta achar AAAA-MM no nome do arquivo. Aceita numérico (2026_08,
+    202608, 08-2026) e abreviação em português (vacinacao_fev_2026,
+    2026_fev) — esse segundo formato é o nome real dos arquivos baixados
+    manualmente do portal do PNI (achado em 22/08/2026: a inferência
+    numérica sozinha falhava pros 7 meses reais, que vêm nomeados
+    "vacinacao_<mês_abrev>_<ano>.csv")."""
+    nome = caminho.stem.lower()
+
     for padrao, ordem in (
         (r"(20\d{2})[-_\.]?(0[1-9]|1[0-2])", "am"),
         (r"(0[1-9]|1[0-2])[-_\.](20\d{2})", "ma"),
@@ -162,6 +175,17 @@ def inferir_mes(caminho: Path) -> str | None:
         if m:
             ano, mes = (m.group(1), m.group(2)) if ordem == "am" else (m.group(2), m.group(1))
             return f"{ano}-{mes}"
+
+    abrevs = "|".join(MESES_PT)
+    for padrao, ordem in (
+        (rf"(20\d{{2}})[-_\.]?({abrevs})", "am"),
+        (rf"({abrevs})[-_\.]?(20\d{{2}})", "ma"),
+    ):
+        m = re.search(padrao, nome)
+        if m:
+            ano, mes_abrev = (m.group(1), m.group(2)) if ordem == "am" else (m.group(2), m.group(1))
+            return f"{ano}-{MESES_PT[mes_abrev]}"
+
     return None
 
 
