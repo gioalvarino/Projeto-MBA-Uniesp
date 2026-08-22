@@ -1,2 +1,11 @@
 google-cloud-bigquery>=3.25
 dbt-bigquery>=1.9,<1.11
+
+# Trava explícita: dbt-bigquery declara internamente "dbt-core>=1.10.0rc0"
+# sem teto. Sem esta linha, o pip resolve pro dbt-core 2.0 (beta "Fusion"),
+# que exige um papel de IAM extra (BigQuery Read Session User) que a
+# service account github-actions não tem — e não vale a pena rodar o
+# projeto em cima de um motor ainda beta só por causa de um range de
+# versão aberto. Ver .github/workflows/pipeline.yml (dbt debug falhou com
+# isso em 22/08/2026, run #2).
+dbt-core>=1.9,<1.11
