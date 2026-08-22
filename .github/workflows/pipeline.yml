@@ -4,6 +4,15 @@ name: Pipeline dbt
 # mensais são baixados e carregados manualmente com
 # `ingestion/load_pni_csv.py` (ver ADR 0002 sobre por que a ingestão não é
 # automatizada ainda: falta uma URL estável de download por mês).
+#
+# Estado atual (ver dbt/README.md): a bronze ainda não tem dado carregado
+# (nenhum CSV real foi processado ainda), então `dbt build`/`dbt run`
+# falhariam ao tentar materializar a view da silver contra uma tabela que
+# não existe. Por isso este job roda só `dbt debug` (testa autenticação e
+# conexão, usando o mesmo secret GCP_SA_KEY já validado no workflow
+# teste-autenticacao-gcp.yml) e `dbt compile` (valida que os models/SQL
+# compilam). Trocar por `dbt build` de verdade assim que a bronze tiver
+# dados.
 
 on:
   schedule:
@@ -13,6 +22,8 @@ on:
 jobs:
   dbt-build:
     runs-on: ubuntu-latest
+    env:
+      GCP_PROJECT: projeto-mba-uniesp
     steps:
       - uses: actions/checkout@v4
 
@@ -23,16 +34,43 @@ jobs:
       - name: Instalar dependências
         run: pip install -r requirements.txt
 
-      # TODO: criar o secret GCP_SA_KEY (chave da service account
-      # github-actions, com Data Editor + Job User) e montar o profiles.yml
-      # a partir dele antes de habilitar este job de verdade.
-      - name: dbt build
-        run: |
-          echo "TODO: configurar profiles.yml a partir do secret GCP_SA_KEY e rodar: dbt build --target ci"
+      - name: Preparar credenciais do GCP (arquivo temporário, só nesta run)
+        run: echo "$GCP_SA_KEY_JSON" > "$RUNNER_TEMP/gcp-sa-key.json"
+        env:
+          GCP_SA_KEY_JSON: ${{ secrets.GCP_SA_KEY }}
 
+      - name: Gerar profiles.yml do CI (ver dbt/profiles.yml.example e ADR 0006)
+        run: |
+          mkdir -p "$RUNNER_TEMP/dbt_profile"
+          cat > "$RUNNER_TEMP/dbt_profile/profiles.yml" <<EOF
+          projeto_pni_uniesp:
+            target: ci
+            outputs:
+              ci:
+                type: bigquery
+                method: service-account
+                project: ${GCP_PROJECT}
+                dataset: silver
+                threads: 4
+                location: US
+                priority: batch
+                maximum_bytes_billed: 10000000000
+                keyfile: "$RUNNER_TEMP/gcp-sa-key.json"
+          EOF
+
+      - name: dbt debug (testa autenticação e conexão)
+        working-directory: dbt
+        run: dbt debug --profiles-dir "$RUNNER_TEMP/dbt_profile"
+
+      - name: dbt compile (valida os models sem precisar de dado na bronze)
+        working-directory: dbt
+        run: dbt compile --profiles-dir "$RUNNER_TEMP/dbt_profile"
+
+      # TODO: trocar os dois passos acima por `dbt build --profiles-dir ...`
+      # assim que a bronze tiver dados carregados (ver dbt/README.md).
       - name: dbt docs generate
         run: |
-          echo "TODO: dbt docs generate"
+          echo "TODO: dbt docs generate (depois que dbt build estiver ativo)"
 
       # TODO: publicar o conteúdo de dbt/target/ no GitHub Pages
       - name: Publicar dbt docs no GitHub Pages

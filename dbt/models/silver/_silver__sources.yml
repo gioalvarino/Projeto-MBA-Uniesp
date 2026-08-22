@@ -1,0 +1,55 @@
+version: 2
+
+sources:
+  - name: bronze
+    database: "{{ env_var('GCP_PROJECT', 'projeto-mba-uniesp') }}"
+    schema: bronze
+    description: >
+      Camada bronze: dado cru carregado por ingestion/load_pni_csv.py via
+      load job (sempre gratuito, ver ADR 0002). Todas as colunas chegam como
+      STRING; tipagem e limpeza são responsabilidade da silver.
+    tables:
+      - name: doses_aplicadas_pni
+        description: >
+          Uma linha por dose aplicada, mesma granularidade do CSV mensal do
+          PNI. Particionada por mês de referência.
+
+          ATENÇÃO — pendência aberta: os nomes de coluna abaixo vêm do
+          dicionário de dados da API do PNI (docs/dicionario_dados.md) e são
+          a melhor suposição até agora, não uma confirmação. O cabeçalho real
+          do CSV ainda não foi conferido (rodar
+          `python ingestion/load_pni_csv.py --dry-run --arquivo <csv> --mes AAAA-MM`
+          e comparar o de-para impresso no log antes de confiar nestes nomes
+          em produção).
+        columns:
+          - name: codigo_documento
+            description: UUID por dose aplicada — chave de deduplicação na silver.
+          - name: data_entrada_rnds
+            description: Data/hora de entrada no RNDS — mede a defasagem da fonte (~12 dias).
+          - name: data_deletado_rnds
+            description: Preenchido quando o registro foi excluído logicamente na origem.
+          - name: data_vacina
+            description: Data do evento (chega com hora 00:00:00-03; tratar como DATE).
+          - name: codigo_municipio_estabelecimento
+            description: Código IBGE do município do estabelecimento que aplicou a dose.
+          - name: codigo_municipio_paciente
+            description: Código IBGE do município do paciente — vem nulo em parte dos registros.
+          - name: codigo_vacina
+            description: Código numérico da vacina. De-para oficial ainda pendente (ver dicionário).
+          - name: codigo_dose_vacina
+            description: Código numérico da dose. De-para oficial ainda pendente.
+          - name: numero_idade_paciente
+            description: >
+              Idade do paciente. "0" significa bebê com menos de 1 ano, não
+              idade faltante — cuidado ao montar faixas etárias.
+          - name: codigo_raca_cor_paciente
+            description: Código de raça/cor. Valor 99 ("SEM INFORMACAO") é muito frequente.
+          - name: status_documento
+            description: Observado sempre "final" na amostra — validar se existem outros valores.
+
+      - name: _carga_log
+        description: >
+          Log de cada carga feita por ingestion/load_pni_csv.py: arquivo, mês
+          de referência, linhas no CSV, linhas carregadas, hash do arquivo e
+          flag de reconciliação. Evidência de qualidade da ingestão —
+          alimenta a tela de qualidade do Power BI.

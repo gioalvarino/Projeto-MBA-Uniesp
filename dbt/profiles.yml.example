@@ -1,0 +1,37 @@
+# Modelo de profiles.yml — copie para ~/.dbt/profiles.yml (Windows:
+# %USERPROFILE%\.dbt\profiles.yml) e ajuste o que estiver marcado.
+# Este arquivo (profiles.yml de verdade) NÃO é versionado — está no
+# .gitignore. Cada pessoa do trio mantém o seu, local.
+#
+# Pré-requisito do target "dev": autenticar com
+#   gcloud auth application-default login
+# (usa a sua conta Google, não uma chave de service account.)
+
+projeto_pni_uniesp:
+  target: dev
+  outputs:
+
+    dev:
+      type: bigquery
+      method: oauth              # usa as credenciais do `gcloud auth application-default login`
+      project: projeto-mba-uniesp
+      dataset: dev_giovanna      # <-- troque para dev_<seu_nome> (o dataset que o IAM te dá Data Editor)
+      threads: 4
+      location: US
+      priority: interactive
+      maximum_bytes_billed: 10000000000   # 10 GB — barreira de custo por execução (ver ADR 0003)
+      job_execution_timeout_seconds: 300
+
+    # Target usado só pelo GitHub Actions (ver .github/workflows/pipeline.yml).
+    # Ninguém precisa deste target localmente — é gerado em tempo de execução
+    # no CI a partir do secret GCP_SA_KEY, não a partir deste arquivo.
+    ci:
+      type: bigquery
+      method: service-account
+      project: projeto-mba-uniesp
+      dataset: silver
+      threads: 4
+      location: US
+      priority: batch
+      maximum_bytes_billed: 10000000000
+      keyfile: "{{ env_var('DBT_KEYFILE_PATH') }}"

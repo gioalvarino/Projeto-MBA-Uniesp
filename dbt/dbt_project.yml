@@ -1,0 +1,28 @@
+name: 'projeto_pni_uniesp'
+version: '1.0.0'
+config-version: 2
+
+# Precisa bater com o nome usado em profiles.yml (ver profiles.yml.example).
+profile: 'projeto_pni_uniesp'
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# Camadas do medalhão (ver docs/adr/0004-arquitetura-medalhao.md).
+# A bronze NÃO é gerida pelo dbt — é carregada por ingestion/load_pni_csv.py
+# (load job) e só entra aqui como source (ver models/silver/_silver__sources.yml).
+models:
+  projeto_pni_uniesp:
+    silver:
+      +materialized: view
+      +schema: silver
+    gold:
+      +materialized: table
+      +schema: gold

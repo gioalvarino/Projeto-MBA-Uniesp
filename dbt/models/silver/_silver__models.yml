@@ -1,0 +1,35 @@
+version: 2
+
+models:
+  - name: stg_pni__doses_aplicadas
+    description: >
+      Uma linha por dose aplicada, depois de deduplicar por
+      `codigo_documento` e remover os registros excluídos na origem
+      (`data_deletado_rnds`). Ver docs/dicionario_dados.md para as regras de
+      qualidade conhecidas.
+    columns:
+      - name: codigo_documento
+        description: Chave única após a deduplicação.
+        tests:
+          - unique
+          - not_null
+
+      - name: data_vacina
+        description: Data do evento, já convertida para DATE.
+        tests:
+          - not_null
+
+      - name: idade_paciente
+        description: >
+          Idade em anos. 0 é bebê com menos de 1 ano (não é nulo/faltante).
+
+      - name: status_documento
+        description: Observado sempre "final" na amostra.
+        tests:
+          - accepted_values:
+              values: ["final"]
+              config:
+                # Ainda não confirmamos se existe outro valor possível —
+                # avisar em vez de quebrar o build (ver pendência do
+                # dicionário de dados).
+                severity: warn
