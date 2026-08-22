@@ -24,12 +24,15 @@ models:
           Idade em anos. 0 é bebê com menos de 1 ano (não é nulo/faltante).
 
       - name: status_documento
-        description: Observado sempre "final" na amostra.
+        description: >
+          Confirmado só "final" no dado real de fev/2026 (8,9M linhas,
+          22/08/2026).
         tests:
           - accepted_values:
-              values: ["final"]
+              arguments:
+                values: ["final"]
               config:
-                # Ainda não confirmamos se existe outro valor possível —
-                # avisar em vez de quebrar o build (ver pendência do
-                # dicionário de dados).
+                # Continua warn (não error): só validamos 1 dos 7 meses até
+                # agora. Promover pra error quando os outros meses também
+                # confirmarem.
                 severity: warn

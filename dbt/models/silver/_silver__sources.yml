@@ -14,38 +14,44 @@ sources:
           Uma linha por dose aplicada, mesma granularidade do CSV mensal do
           PNI. Particionada por mês de referência.
 
-          ATENÇÃO — pendência aberta: os nomes de coluna abaixo vêm do
-          dicionário de dados da API do PNI (docs/dicionario_dados.md) e são
-          a melhor suposição até agora, não uma confirmação. O cabeçalho real
-          do CSV ainda não foi conferido (rodar
-          `python ingestion/load_pni_csv.py --dry-run --arquivo <csv> --mes AAAA-MM`
-          e comparar o de-para impresso no log antes de confiar nestes nomes
-          em produção).
+          Nomes de coluna CONFIRMADOS em 22/08/2026 contra o cabeçalho real
+          do CSV (arquivos baixados manualmente do portal, delimitador ';',
+          encoding não-UTF-8 — provavelmente ISO-8859-1/Windows-1252, ver
+          caracteres acentuados corrompidos na inspeção). O CSV usa prefixos
+          abreviados (co_, no_, dt_, st_, sg_, tp_, ds_, nu_), diferente dos
+          nomes por extenso do dicionário da API do PNI — corrigido aqui e
+          em docs/dicionario_dados.md.
         columns:
-          - name: codigo_documento
+          - name: co_documento
             description: UUID por dose aplicada — chave de deduplicação na silver.
-          - name: data_entrada_rnds
+          - name: dt_entrada_rnds
             description: Data/hora de entrada no RNDS — mede a defasagem da fonte (~12 dias).
-          - name: data_deletado_rnds
+          - name: dt_deletado_rnds
             description: Preenchido quando o registro foi excluído logicamente na origem.
-          - name: data_vacina
+          - name: dt_vacina
             description: Data do evento (chega com hora 00:00:00-03; tratar como DATE).
-          - name: codigo_municipio_estabelecimento
+          - name: co_municipio_estabelecimento
             description: Código IBGE do município do estabelecimento que aplicou a dose.
-          - name: codigo_municipio_paciente
+          - name: co_municipio_paciente
             description: Código IBGE do município do paciente — vem nulo em parte dos registros.
-          - name: codigo_vacina
+          - name: co_vacina
             description: Código numérico da vacina. De-para oficial ainda pendente (ver dicionário).
-          - name: codigo_dose_vacina
+          - name: co_dose_vacina
             description: Código numérico da dose. De-para oficial ainda pendente.
-          - name: numero_idade_paciente
+          - name: nu_idade_paciente
             description: >
               Idade do paciente. "0" significa bebê com menos de 1 ano, não
               idade faltante — cuidado ao montar faixas etárias.
-          - name: codigo_raca_cor_paciente
+          - name: co_raca_cor_paciente
             description: Código de raça/cor. Valor 99 ("SEM INFORMACAO") é muito frequente.
-          - name: status_documento
+          - name: st_documento
             description: Observado sempre "final" na amostra — validar se existem outros valores.
+          - name: sg_uf_paciente
+            description: Sigla da UF de residência do paciente.
+          - name: sg_uf_estabelecimento
+            description: Sigla da UF do estabelecimento que aplicou a dose.
+          - name: co_estrategia_vacinacao
+            description: Código da estratégia de vacinação. De-para oficial ainda pendente.
 
       - name: _carga_log
         description: >

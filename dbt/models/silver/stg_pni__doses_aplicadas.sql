@@ -3,8 +3,9 @@
 -- agregação, nenhum enriquecimento (isso fica pros próximos models da
 -- silver/gold, ex.: join por código IBGE com a Base dos Dados).
 --
--- Nomes de coluna vêm de _silver__sources.yml — ainda não confirmados
--- contra o CSV real (pendência aberta, ver comentário lá).
+-- Nomes de coluna confirmados contra o CSV real em 22/08/2026 (ver
+-- _silver__sources.yml) — o CSV usa prefixos abreviados (co_/no_/dt_/st_),
+-- diferente do dicionário da API do PNI.
 
 with bronze as (
 
@@ -16,18 +17,21 @@ with bronze as (
 tipado as (
 
     select
-        codigo_documento,
-        safe_cast(data_vacina as date)             as data_vacina,
-        safe_cast(data_entrada_rnds as timestamp)   as data_entrada_rnds,
-        data_deletado_rnds,
-        codigo_municipio_estabelecimento,
-        codigo_municipio_paciente,
-        codigo_vacina,
-        codigo_dose_vacina,
-        status_documento,
+        co_documento                as codigo_documento,
+        safe_cast(dt_vacina as date)           as data_vacina,
+        safe_cast(dt_entrada_rnds as timestamp) as data_entrada_rnds,
+        dt_deletado_rnds            as data_deletado_rnds,
+        co_municipio_estabelecimento,
+        co_municipio_paciente,
+        co_vacina,
+        co_dose_vacina,
+        co_estrategia_vacinacao,
+        st_documento                as status_documento,
+        sg_uf_paciente,
+        sg_uf_estabelecimento,
         -- "0" é bebê com menos de 1 ano, não idade faltante — ver dicionário.
-        safe_cast(numero_idade_paciente as int64)   as idade_paciente,
-        codigo_raca_cor_paciente
+        safe_cast(nu_idade_paciente as int64)   as idade_paciente,
+        co_raca_cor_paciente
 
     from bronze
 
