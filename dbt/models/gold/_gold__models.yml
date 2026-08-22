@@ -1,0 +1,82 @@
+version: 2
+
+models:
+  - name: dim_tempo
+    description: >
+      Dimensão de calendário gerada (ADR 0008), grão diário, cobrindo
+      2026 inteiro. Não vem da fonte.
+    columns:
+      - name: data
+        description: Chave da dimensão (mesmo valor de data_vacina na fato).
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_municipio
+    description: >
+      Dimensão de município de cobertura (ADR 0007 + ADR 0008). Inclui
+      membros especiais pra 'ESTRANGEIRO' e 'SEM INFORMACAO'.
+      nome_municipio/populacao pendentes de enriquecimento externo.
+    columns:
+      - name: chave_municipio
+        description: >
+          municipio_cobertura quando existe, senão uf_cobertura
+          ('ESTRANGEIRO'/'SEM INFORMACAO').
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_vacina
+    description: >
+      Dimensão de vacina/dose (ADR 0008). nome_vacina/nome_dose pendentes
+      do de-para oficial do PNI.
+    columns:
+      - name: chave_vacina
+        description: "co_vacina || '-' || co_dose_vacina"
+        tests:
+          - unique
+          - not_null
+
+  - name: fct_cobertura_vacinal
+    description: >
+      Fato de cobertura vacinal (ADR 0008). Grão agregado: uma linha por
+      combinação de data_vacina + chave_municipio + chave_vacina +
+      chave_faixa_etaria, com qtd_doses como métrica. Sem dado pessoal
+      identificável (ADR 0005).
+    columns:
+      - name: data_vacina
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_tempo')
+                field: data
+
+      - name: chave_municipio
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_municipio')
+                field: chave_municipio
+
+      - name: chave_vacina
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_vacina')
+                field: chave_vacina
+
+      - name: chave_faixa_etaria
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('faixa_etaria')
+                field: ordem
+
+      - name: qtd_doses
+        description: Contagem de doses aplicadas na combinação de chaves da linha.
+        tests:
+          - not_null

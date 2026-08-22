@@ -20,3 +20,27 @@ seeds:
         description: Sigla da UF (2 letras).
       - name: nome_uf
         description: Nome completo da UF.
+
+  - name: faixa_etaria
+    description: >
+      Referência fixa de faixas etárias (ADR 0008) usada em
+      `fct_cobertura_vacinal`. Fronteiras usuais de programas de
+      imunização — ajustáveis aqui sem tocar em outros models. `ordem` é a
+      chave usada pela fato (`chave_faixa_etaria`) e também define a ordem
+      de exibição no Power BI. A linha `ordem = 0` (idade_min/idade_max
+      nulos) cobre `idade_paciente` nulo.
+    columns:
+      - name: ordem
+        description: Chave da dimensão e ordem de exibição.
+        tests:
+          - unique
+          - not_null
+      - name: idade_min
+        description: Idade mínima (inclusiva) da faixa, em anos. Nulo na faixa "sem informação".
+      - name: idade_max
+        description: Idade máxima (inclusiva) da faixa, em anos. Nulo na faixa "sem informação".
+      - name: faixa_etaria
+        description: Rótulo da faixa, pronto pra exibir no Power BI.
+        tests:
+          - unique
+          - not_null

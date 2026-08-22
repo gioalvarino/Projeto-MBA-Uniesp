@@ -1,17 +1,30 @@
 # gold
 
-Ainda vazio. Vai conter o modelo estrela: fato de doses aplicadas +
-dimensões de tempo, município, vacina, estabelecimento e faixa etária.
+Modelo estrela de cobertura vacinal (ADR 0008), desenhado e implementado
+em 22/08/2026 antes de carregar os outros 6 meses de dado, pra não ter que
+redesenhar depois de a bronze ficar 10x maior.
 
-A decisão de geografia de cobertura (município de aplicação vs. residência)
-já foi tomada — ver
-[`docs/adr/0007-geografia-de-cobertura-municipio-residencia.md`](../../docs/adr/0007-geografia-de-cobertura-municipio-residencia.md).
-A fato de doses deve usar `municipio_cobertura`/`uf_cobertura` (já
-resolvidos na silver, `stg_pni__doses_aplicadas`), nunca as colunas cruas de
-paciente/estabelecimento diretamente. A dimensão de município ainda precisa
-tratar o caso `municipio_cobertura is null` (estrangeiro/sem informação) —
-ver "Consequências" no ADR 0007.
+- `fct_cobertura_vacinal` — fato, grão **agregado**: uma linha por
+  combinação de (`data_vacina`, `chave_municipio`, `chave_vacina`,
+  `chave_faixa_etaria`), métrica `qtd_doses`. Não é uma linha por dose —
+  ver ADR 0008 pro porquê (tamanho/velocidade no Power BI + reforço do
+  ADR 0005/LGPD).
+- `dim_tempo` — calendário gerado, grão diário, cobre 2026 inteiro.
+- `dim_municipio` — geografia de cobertura (ADR 0007), com membros
+  especiais pra `ESTRANGEIRO`/`SEM INFORMACAO`. `nome_municipio` e
+  `populacao` ainda nulos — pendem do enriquecimento com Base dos
+  Dados/IBGE (ADR 0004, não implementado ainda).
+- `dim_vacina` — códigos de vacina/dose. `nome_vacina`/`nome_dose` ainda
+  nulos — pendem do de-para oficial do PNI (docs/dicionario_dados.md).
+- `faixa_etaria` (seed, não model) — buckets etários fixos, ver ADR 0008.
 
-Falta ainda o enriquecimento com Base dos Dados/IBGE (população por
-município, pra calcular a taxa de cobertura). Ver
-[`docs/adr/0004-arquitetura-medalhao.md`](../../docs/adr/0004-arquitetura-medalhao.md).
+**Decisão explícita:** sem dimensão de estabelecimento (onde a dose foi
+aplicada) — o modelo foca só na geografia de residência (cobertura). Isso
+refina o desenho original do ADR 0004. Ver ADR 0008 pro raciocínio.
+
+**Pendências que ainda bloqueiam o indicador completo:**
+- Enriquecimento com Base dos Dados/IBGE (nome de município + população) —
+  sem isso, dá pra contar doses mas não calcular taxa de cobertura.
+- De-para oficial de vacina/dose/estratégia do PNI.
+
+Ainda não validado com `dbt build` contra o dado real — próximo passo.
