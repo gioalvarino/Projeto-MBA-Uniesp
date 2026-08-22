@@ -34,6 +34,13 @@ sources:
             description: Código IBGE do município do estabelecimento que aplicou a dose.
           - name: co_municipio_paciente
             description: Código IBGE do município do paciente — vem nulo em parte dos registros.
+          - name: co_pais_paciente
+            description: >
+              Código do país de residência do paciente. '10' = Brasil
+              (confirmado empiricamente contra o dado real, 22/08/2026 — ver
+              ADR 0007). Vem nulo em ~1,8% dos registros (sempre junto com
+              co_municipio_paciente também nulo); valores estrangeiros
+              observados: '24' (Paraguai), '22' (Bolívia).
           - name: co_vacina
             description: Código numérico da vacina. De-para oficial ainda pendente (ver dicionário).
           - name: co_dose_vacina

@@ -1,0 +1,22 @@
+version: 2
+
+seeds:
+  - name: uf_ibge
+    description: >
+      Tabela de referência fixa: 2 primeiros dígitos do código IBGE de
+      município → sigla da UF. São 27 unidades (26 estados + DF) e essa
+      relação nunca muda — não é um de-para pendente de confirmação como
+      co_vacina/co_dose_vacina/co_estrategia_vacinacao.
+
+      Usada em `stg_pni__doses_aplicadas` (ver ADR 0007) pra derivar
+      `uf_cobertura` quando o campo de sigla vem vazio no CSV mas o
+      município de cobertura é conhecido — achado em 22/08/2026 (1.162
+      linhas de 8,9M no dado real de fevereiro tinham município preenchido
+      e sigla de UF vazia).
+    columns:
+      - name: co_uf
+        description: 2 primeiros dígitos do código IBGE de município.
+      - name: sg_uf
+        description: Sigla da UF (2 letras).
+      - name: nome_uf
+        description: Nome completo da UF.

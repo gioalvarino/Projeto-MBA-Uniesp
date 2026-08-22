@@ -23,6 +23,25 @@ models:
         description: >
           Idade em anos. 0 é bebê com menos de 1 ano (não é nulo/faltante).
 
+      - name: municipio_cobertura
+        description: >
+          Código IBGE resolvido pro cálculo de cobertura (ADR 0007):
+          residência quando disponível, aplicação como fallback, nulo
+          quando estrangeiro ou sem informação de país.
+
+      - name: uf_cobertura
+        description: >
+          UF resolvida pro cálculo de cobertura (ADR 0007): residência,
+          aplicação (fallback), UF derivada do código do município (seed
+          uf_ibge) quando a sigla vem vazia na fonte, 'ESTRANGEIRO' ou
+          'SEM INFORMACAO'.
+        tests:
+          # Error (não warn): a estrutura do CASE + COALESCE final sempre
+          # preenche um valor — se isso falhar, é sinal de um caminho novo
+          # não coberto (ex.: prefixo de código de município fora da tabela
+          # uf_ibge), não de dado real vazio.
+          - not_null
+
       - name: status_documento
         description: >
           Confirmado só "final" no dado real de fev/2026 (8,9M linhas,

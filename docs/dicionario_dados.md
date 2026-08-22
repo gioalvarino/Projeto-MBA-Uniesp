@@ -19,7 +19,8 @@
 | `dt_entrada_rnds` | Data de entrada no RNDS → mede a defasagem da fonte |
 | `dt_deletado_rnds` | Exclusão lógica na origem → filtrar na silver |
 | `dt_vacina` | Data do evento (vem com hora `00:00:00-03`; é DATE, não timestamp) |
-| `co_municipio_estabelecimento` / `co_municipio_paciente` | Códigos IBGE — as duas geografias possíveis (ver ADR 0001 sobre qual usar no cálculo de cobertura) |
+| `co_municipio_estabelecimento` / `co_municipio_paciente` | Códigos IBGE — as duas geografias possíveis |
+| `co_pais_paciente` | País de residência do paciente ('10' = Brasil). Usado na resolução de geografia de cobertura (ADR 0007) |
 | `co_vacina`, `co_dose_vacina` | Códigos numéricos; precisam de de-para do dicionário oficial do PNI (pendente) |
 | `co_estrategia_vacinacao` | Código da estratégia de vacinação; de-para pendente |
 | `st_documento` | **Confirmado só `"final"`** no dado real de fev/2026 (teste `accepted_values` passou em `dbt build` contra 8,9M linhas) |
@@ -30,6 +31,29 @@
 A silver (`stg_pni__doses_aplicadas`, ver `dbt/`) renomeia estes campos de
 volta para nomes por extenso (`codigo_documento`, `data_vacina` etc.) — a
 abreviação fica só na bronze, fiel ao dado original.
+
+## Geografia de cobertura (ADR 0007)
+
+Resolvida na silver em dois campos novos, `municipio_cobertura` e
+`uf_cobertura` — residência como principal (é a geografia que casa com o
+denominador populacional do IBGE), com fallback pra aplicação quando a
+residência não vem preenchida:
+
+1. `co_pais_paciente` vazio → `uf_cobertura = 'SEM INFORMACAO'`, município nulo.
+2. `co_pais_paciente` diferente de Brasil (`'10'`) → `uf_cobertura = 'ESTRANGEIRO'`, município nulo.
+3. Brasileiro com município de residência vazio → usa município/UF de **aplicação**.
+4. Brasileiro com residência preenchida → usa residência normalmente.
+
+**Refinamento (achado real, 22/08/2026):** em 1.162 de 8,9M linhas (fev/2026),
+o país é Brasil e o município vem preenchido, mas a sigla da UF (`sg_uf_paciente`)
+vem vazia mesmo assim — inconsistência pontual na fonte. Nesse caso, a UF é
+**derivada dos 2 primeiros dígitos do código IBGE do município** (seed
+`dbt/seeds/uf_ibge.csv`, tabela fixa e estável — não é um de-para pendente
+como `co_vacina`), em vez de cair em "SEM INFORMACAO" e descartar uma
+informação que na verdade temos.
+
+Ver `docs/adr/0007-geografia-de-cobertura-municipio-residencia.md` pro
+raciocínio completo e os números reais que embasaram a regra.
 
 ## Códigos pendentes de de-para
 
