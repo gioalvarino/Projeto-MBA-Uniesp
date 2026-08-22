@@ -1,0 +1,9 @@
+ordem,idade_min,idade_max,faixa_etaria
+0,,,Sem informação
+1,0,0,Menor de 1 ano
+2,1,1,1 ano
+3,2,4,2 a 4 anos
+4,5,9,5 a 9 anos
+5,10,19,10 a 19 anos
+6,20,59,20 a 59 anos
+7,60,150,60 anos ou mais
