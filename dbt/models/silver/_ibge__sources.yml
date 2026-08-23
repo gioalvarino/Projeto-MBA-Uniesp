@@ -1,0 +1,29 @@
+version: 2
+
+sources:
+  - name: bd_diretorios_brasil
+    database: basedosdados
+    schema: br_bd_diretorios_brasil
+    description: >
+      Diretório de municípios do IBGE — dataset público da Base dos Dados
+      (https://basedosdados.org/), consultado diretamente (sem cópia/custo
+      de armazenamento nosso). Enriquecimento previsto desde o ADR 0004,
+      implementado em 23/08/2026 (ver ADR 0009).
+    tables:
+      - name: municipio
+        description: >
+          Um município por linha — id_municipio (código IBGE, 7 dígitos,
+          mesmo formato de municipio_cobertura na silver), nome, sigla_uf.
+
+  - name: bd_ibge_populacao
+    database: basedosdados
+    schema: br_ibge_populacao
+    description: >
+      Estimativas populacionais anuais do IBGE por município — dataset
+      público da Base dos Dados.
+    tables:
+      - name: municipio
+        description: >
+          Uma linha por (ano, município) com população estimada. 2025 é o
+          ano mais recente com cobertura completa (5.570 municípios,
+          confirmado em 23/08/2026) — ver ADR 0009.

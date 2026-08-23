@@ -14,8 +14,9 @@ redesenhar depois de a bronze ficar 10x maior. `dim_perfil_paciente` e
 - `dim_tempo` — calendário gerado, grão diário, cobre 2026 inteiro.
 - `dim_municipio` — geografia de cobertura (ADR 0007), com membros
   especiais pra `ESTRANGEIRO`/`SEM INFORMACAO`. `nome_municipio` e
-  `populacao` ainda nulos — pendem do enriquecimento com Base dos
-  Dados/IBGE (ADR 0004, não implementado ainda).
+  `populacao` (estimativa 2025) já vêm da Base dos Dados/IBGE
+  (`stg_ibge__municipios` — ADR 0004 + ADR 0009, implementado em
+  23/08/2026), nulos só pros membros especiais.
 - `dim_vacina` — códigos de vacina/dose. `nome_vacina`/`nome_dose` ainda
   nulos — pendem do de-para oficial do PNI (docs/dicionario_dados.md).
 - `dim_perfil_paciente` — raça/cor + sexo do paciente, padronizados na
@@ -30,10 +31,10 @@ redesenhar depois de a bronze ficar 10x maior. `dim_perfil_paciente` e
 aplicada) — o modelo foca só na geografia de residência (cobertura). Isso
 refina o desenho original do ADR 0004. Ver ADR 0008 pro raciocínio.
 
-**Pendências que ainda bloqueiam o indicador completo:**
-- Enriquecimento com Base dos Dados/IBGE (nome de município + população) —
-  sem isso, dá pra contar doses mas não calcular taxa de cobertura.
-- De-para oficial de vacina/dose/estratégia do PNI.
+**Pendência que ainda falta:**
+- De-para oficial de vacina/dose/estratégia do PNI — só o rótulo textual,
+  não bloqueia mais o cálculo de taxa de cobertura.
 
 Validado com `dbt build` contra os 7 meses reais completos (23/08/2026,
-PASS=40 WARN=0 ERROR=0).
+PASS=46 WARN=0 ERROR=0, antes do enriquecimento IBGE — revalidar depois
+dele).

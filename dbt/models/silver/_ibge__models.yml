@@ -1,0 +1,36 @@
+version: 2
+
+models:
+  - name: stg_ibge__municipios
+    description: >
+      Enriquecimento com Base dos Dados/IBGE (ADR 0004 + ADR 0009,
+      23/08/2026): nome e população por município. População usa a
+      estimativa mais recente disponível com valor preenchido até 2025,
+      não exatamente 2025 (achado real: Boa Esperança do Norte/MT sem
+      valor pra 2025 — ver ADR 0009). Fonte externa, não versionada por
+      nós.
+    columns:
+      - name: id_municipio
+        description: Código IBGE do município (7 dígitos) — mesmo formato de municipio_cobertura na silver.
+        tests:
+          - unique
+          - not_null
+
+      - name: nome_municipio
+        tests:
+          - not_null
+
+      - name: populacao
+        description: >
+          Estimativa populacional mais recente disponível (até 2025) por
+          município. Pode ficar nula se um município não tiver NENHUM ano
+          com valor preenchido na Base dos Dados — checar se acontecer.
+        tests:
+          - not_null:
+              config:
+                severity: warn
+
+      - name: ano_populacao
+        description: >
+          De qual ano veio a estimativa de populacao usada (nem sempre
+          2025) — transparência pra apresentação/Power BI.
