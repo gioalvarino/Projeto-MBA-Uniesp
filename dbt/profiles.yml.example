@@ -19,7 +19,12 @@ projeto_pni_uniesp:
       threads: 4
       location: US
       priority: interactive
-      maximum_bytes_billed: 10000000000   # 10 GB — barreira de custo por execução (ver ADR 0003)
+      # 20 GB — barreira de custo por execução (ver ADR 0003). Subiu de 10
+      # pra 20 GB em 23/08/2026: com os 7 meses reais carregados, a silver
+      # (view) recomputa a transformação inteira a cada teste/consulta, e
+      # um simples not_null bateu em ~10,0003 GB. Ainda irrisório perto da
+      # cota gratuita de 1 TB/mês de processamento de consulta do BigQuery.
+      maximum_bytes_billed: 20000000000
       job_execution_timeout_seconds: 300
 
     # Target usado só pelo GitHub Actions (ver .github/workflows/pipeline.yml).
@@ -33,5 +38,5 @@ projeto_pni_uniesp:
       threads: 4
       location: US
       priority: batch
-      maximum_bytes_billed: 10000000000
+      maximum_bytes_billed: 20000000000
       keyfile: "{{ env_var('DBT_KEYFILE_PATH') }}"

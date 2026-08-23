@@ -42,16 +42,33 @@ models:
           # uf_ibge), não de dado real vazio.
           - not_null
 
-      - name: status_documento
+      - name: raca_cor_cobertura
         description: >
-          Confirmado só "final" no dado real de fev/2026 (8,9M linhas,
-          22/08/2026).
+          Código de raça/cor padronizado (adendo ADR 0008, 23/08/2026):
+          co_raca_cor_paciente direto, com nulo (4 casos em ~115M linhas)
+          caindo em '99' — mesmo código que a fonte já usa pra "sem
+          informação" explícito.
         tests:
+          - not_null
           - accepted_values:
               arguments:
-                values: ["final"]
-              config:
-                # Continua warn (não error): só validamos 1 dos 7 meses até
-                # agora. Promover pra error quando os outros meses também
-                # confirmarem.
-                severity: warn
+                values: ["01", "02", "03", "04", "05", "99"]
+
+      - name: nome_raca_cor_cobertura
+        description: >
+          Nome de raça/cor já vem pronto da fonte (no_raca_cor_paciente) —
+          sem de-para externo pendente, diferente de vacina/dose/estratégia.
+        tests:
+          - not_null
+
+      - name: sexo_cobertura
+        description: >
+          Sexo padronizado (adendo ADR 0008, 23/08/2026): 'F'/'M' direto da
+          fonte (tp_sexo_paciente); 'I' (Ignorado, 1.827 casos nos 7 meses
+          reais) e 'N' (2 casos, provável erro de digitação da fonte) caem
+          em 'SEM INFORMACAO' — nenhum registro chegou nulo de fato.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["F", "M", "SEM INFORMACAO"]

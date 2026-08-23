@@ -23,10 +23,11 @@
 | `co_pais_paciente` | País de residência do paciente ('10' = Brasil). Usado na resolução de geografia de cobertura (ADR 0007) |
 | `co_vacina`, `co_dose_vacina` | Códigos numéricos; precisam de de-para do dicionário oficial do PNI (pendente) |
 | `co_estrategia_vacinacao` | Código da estratégia de vacinação; de-para pendente |
-| `st_documento` | **Confirmado só `"final"`** no dado real de fev/2026 (teste `accepted_values` passou em `dbt build` contra 8,9M linhas) |
+| `st_documento` | **Confirmado só `"final"`** nos 7 meses reais — sem valor analítico; removido da silver em 23/08/2026 (segue só na bronze) |
 | `sg_uf_paciente` / `sg_uf_estabelecimento` | Sigla da UF — mais confiável que os nomes por extenso (`no_uf_*`) pra filtrar/agrupar |
 | `nu_idade_paciente` | Idade do paciente — ver regra de qualidade abaixo |
-| `co_raca_cor_paciente` | Código de raça/cor |
+| `co_raca_cor_paciente` / `no_raca_cor_paciente` | Código e nome de raça/cor (nome já vem pronto da fonte) |
+| `tp_sexo_paciente` | Sexo do paciente (F/M/I/N — ver "Perfil demográfico" abaixo) |
 
 A silver (`stg_pni__doses_aplicadas`, ver `dbt/`) renomeia estes campos de
 volta para nomes por extenso (`codigo_documento`, `data_vacina` etc.) — a
@@ -55,6 +56,40 @@ informação que na verdade temos.
 Ver `docs/adr/0007-geografia-de-cobertura-municipio-residencia.md` pro
 raciocínio completo e os números reais que embasaram a regra.
 
+## Perfil demográfico — raça/cor e sexo (adendo ADR 0008, 23/08/2026)
+
+Resolvido na silver em três campos novos — `raca_cor_cobertura`,
+`nome_raca_cor_cobertura` e `sexo_cobertura` — pra alimentar a dimensão
+`dim_perfil_paciente` na gold, permitindo cobertura vacinal por
+característica do vacinado.
+
+Distribuição real, os 7 meses (jan–jul/2026, ~115M linhas):
+
+| `tp_sexo_paciente` | Linhas |
+|---|---|
+| F | 63.844.931 |
+| M | 51.311.897 |
+| I (Ignorado) | 1.827 |
+| N (provável erro de digitação da fonte) | 2 |
+
+`I` e `N` viram `'SEM INFORMACAO'` em `sexo_cobertura` — nenhum registro
+chegou com o campo de fato nulo.
+
+| `co_raca_cor_paciente` | `no_raca_cor_paciente` | Linhas |
+|---|---|---|
+| 01 | BRANCA | 40.015.873 |
+| 02 | PRETA | 3.902.212 |
+| 03 | PARDA | 38.376.492 |
+| 04 | AMARELA | 8.483.148 |
+| 05 | INDIGENA | 729.758 |
+| 99 | SEM INFORMACAO | 23.651.170 |
+| NULL | NULL | 4 |
+
+As 4 linhas nulas caem em `'99'`/`'SEM INFORMACAO'` em
+`raca_cor_cobertura`/`nome_raca_cor_cobertura` — mesmo código que a fonte já
+usa pra "sem informação" explícito. O nome já vem pronto da fonte, sem
+precisar de um de-para externo como vacina/dose/estratégia.
+
 ## Códigos pendentes de de-para
 
 - `co_vacina`
@@ -73,6 +108,12 @@ raciocínio completo e os números reais que embasaram a regra.
   qualidade.
 - CEP sujo — nulos e valores genéricos como `55000000`.
 - `co_raca_cor_paciente = 99` ("SEM INFORMACAO") é muito frequente.
+- `co_municipio_paciente`/`co_municipio_estabelecimento = '999999'` e
+  `sg_uf_paciente`/`sg_uf_estabelecimento = 'XX'` são sentinelas de
+  "ignorado" da fonte, não código IBGE/sigla de verdade (achado real,
+  23/08/2026 — quebrava a chave única de `dim_municipio` nos 7 meses
+  completos). Tratados como vazio na silver (ver ADR 0007, segundo
+  refinamento).
 - `ds_vacina_fabricante` nulo em parte dos registros.
 - `no_fantasia_estalecimento` — o typo é da própria fonte (confirmado no
   CSV real, não é sanitização nossa). Mantido cru na bronze (fidelidade ao

@@ -50,9 +50,24 @@ sources:
               Idade do paciente. "0" significa bebê com menos de 1 ano, não
               idade faltante — cuidado ao montar faixas etárias.
           - name: co_raca_cor_paciente
-            description: Código de raça/cor. Valor 99 ("SEM INFORMACAO") é muito frequente.
+            description: >
+              Código de raça/cor (01 Branca, 02 Preta, 03 Parda, 04 Amarela,
+              05 Indígena, 99 Sem informação). Confirmado contra os 7 meses
+              reais em 23/08/2026 — nulo em só 4 de ~115M linhas.
+          - name: no_raca_cor_paciente
+            description: >
+              Nome de raça/cor já pronto na fonte (mesmo código de
+              co_raca_cor_paciente) — sem de-para externo pendente.
+          - name: tp_sexo_paciente
+            description: >
+              Sexo do paciente. Valores reais confirmados nos 7 meses
+              (23/08/2026): F (63.844.931), M (51.311.897), I/"Ignorado"
+              (1.827), N (2 — provável erro de digitação da fonte).
           - name: st_documento
-            description: Observado sempre "final" na amostra — validar se existem outros valores.
+            description: >
+              Observado sempre "final" nos 7 meses reais — sem valor
+              analítico, por isso não é trazido pra silver (removido de
+              stg_pni__doses_aplicadas em 23/08/2026).
           - name: sg_uf_paciente
             description: Sigla da UF de residência do paciente.
           - name: sg_uf_estabelecimento

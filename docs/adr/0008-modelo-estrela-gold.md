@@ -81,3 +81,35 @@ usa só a geografia de cobertura (`municipio_cobertura`/`uf_cobertura`, ADR 0007
 - Testes de integridade referencial (`relationships`) entre a fato e cada
   dimensão substituem a necessidade de chaves estrangeiras reais do
   BigQuery (que não existem no motor) — ver `_gold__models.yml`.
+
+## Adendo (23/08/2026): dimensão de perfil demográfico
+
+Com os 7 meses já carregados, Giovanna pediu pra revisar quais colunas
+"limpar" antes do BI. Na revisão, decidiu que raça/cor e sexo do paciente
+**devem** chegar na gold, pra mostrar características de quem foi vacinado
+(indicador comum de equidade em vigilância em saúde pública) — o oposto do
+instinto inicial de remover `co_raca_cor_paciente` por não ter uso definido
+ainda.
+
+**Decisão:** nova dimensão `dim_perfil_paciente` (chave = raça/cor + sexo
+padronizados), referenciada por uma nova chave `chave_perfil` na
+`fct_cobertura_vacinal`. Validado contra os 7 meses reais (23/08/2026):
+
+- `tp_sexo_paciente`: F (63.844.931), M (51.311.897), I/Ignorado (1.827),
+  N (2, provável erro de digitação da fonte) — sem nulo de fato. `I` e `N`
+  viram `'SEM INFORMACAO'` em `sexo_cobertura`.
+- `co_raca_cor_paciente`/`no_raca_cor_paciente`: par sempre consistente (01
+  Branca, 02 Preta, 03 Parda, 04 Amarela, 05 Indígena, 99 Sem informação),
+  nulo em só 4 de ~115M linhas — caem em `'99'`/`'SEM INFORMACAO'`.
+
+Diferente de `dim_vacina`, o nome de raça/cor já vem pronto na fonte
+(`no_raca_cor_paciente`) — sem de-para externo pendente.
+
+Também aproveitado pra remover `status_documento` da silver: confirmado
+sempre `"final"` nos 7 meses reais (não só na amostra de fevereiro), sem
+valor analítico. Segue documentado como coluna da bronze
+(`_silver__sources.yml`), só não é mais trazido pra silver/gold.
+
+**Consequência:** `dim_perfil_paciente` é pequena (até 18 combinações) e
+segue o mesmo princípio de agregação do ADR 0005 — raça/cor e sexo entram
+só como contagem por combinação, nunca ligados a um paciente individual.

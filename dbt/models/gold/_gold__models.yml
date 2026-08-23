@@ -37,12 +37,26 @@ models:
           - unique
           - not_null
 
+  - name: dim_perfil_paciente
+    description: >
+      Dimensão de perfil demográfico do paciente (raça/cor + sexo) — adendo
+      ao ADR 0008 (23/08/2026). Grão pequeno (até 6 raças/cores x 3
+      categorias de sexo padronizadas = no máximo 18 combinações). Nome de
+      raça/cor já vem pronto da fonte, sem de-para externo pendente.
+    columns:
+      - name: chave_perfil
+        description: "raca_cor_cobertura || '-' || sexo_cobertura"
+        tests:
+          - unique
+          - not_null
+
   - name: fct_cobertura_vacinal
     description: >
-      Fato de cobertura vacinal (ADR 0008). Grão agregado: uma linha por
-      combinação de data_vacina + chave_municipio + chave_vacina +
-      chave_faixa_etaria, com qtd_doses como métrica. Sem dado pessoal
-      identificável (ADR 0005).
+      Fato de cobertura vacinal (ADR 0008 + adendo 23/08/2026). Grão
+      agregado: uma linha por combinação de data_vacina + chave_municipio +
+      chave_vacina + chave_faixa_etaria + chave_perfil, com qtd_doses como
+      métrica. Sem dado pessoal identificável direto (ADR 0005) — raça/cor e
+      sexo entram agregados, nunca ligados a um indivíduo.
     columns:
       - name: data_vacina
         tests:
@@ -75,6 +89,14 @@ models:
               arguments:
                 to: ref('faixa_etaria')
                 field: ordem
+
+      - name: chave_perfil
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_perfil_paciente')
+                field: chave_perfil
 
       - name: qtd_doses
         description: Contagem de doses aplicadas na combinação de chaves da linha.

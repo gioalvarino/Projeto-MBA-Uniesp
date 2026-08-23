@@ -84,6 +84,21 @@ informação: `uf_cobertura = coalesce(sigla_direta_do_csv,
 uf_derivada_do_prefixo_do_municipio, 'SEM INFORMACAO')`. A tabela de
 derivação está em `dbt/seeds/uf_ibge.csv`.
 
+**Segundo refinamento (achado ao validar contra os 7 meses completos,
+23/08/2026):** depois de carregar todos os meses e adicionar
+`dim_perfil_paciente` (adendo ADR 0008), o teste `unique` de
+`chave_municipio` em `dim_municipio` falhou com 1 duplicata. Investigando: o
+código `'999999'` aparece em `municipio_cobertura` associado a duas siglas
+de UF diferentes em registros diferentes (`'SEM INFORMACAO'` e `'XX'`) —
+como a chave da dimensão usa só o código do município, isso virou uma
+colisão. `'999999'` não é um código IBGE de verdade (código real tem 7
+dígitos com prefixo de UF 11-53; `'999999'` tem prefixo `'99'`, que não
+existe) — é um sentinela de "município ignorado" da própria fonte, e `'XX'`
+é o sentinela equivalente pra UF. A regra foi ajustada pra tratar os dois
+como vazio (`nullif`) antes de aplicar o fallback aplicação/residência já
+existente — assim esses registros caem na mesma categoria "SEM INFORMACAO"
+que os outros casos de dado faltante, em vez de formar um município falso.
+
 ## Consequências
 
 - A camada gold (fato de doses + dimensão de município) usa
