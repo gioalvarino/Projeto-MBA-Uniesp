@@ -113,3 +113,28 @@ valor analítico. Segue documentado como coluna da bronze
 **Consequência:** `dim_perfil_paciente` é pequena (até 18 combinações) e
 segue o mesmo princípio de agregação do ADR 0005 — raça/cor e sexo entram
 só como contagem por combinação, nunca ligados a um paciente individual.
+
+## Adendo (23/08/2026): dimensão de estratégia de vacinação
+
+Mesma revisão de colunas: `co_estrategia_vacinacao` não era usada em nenhuma
+dimensão/fato até então. Decisão: **manter e subir pra gold** (em vez de
+remover) — estratégia de vacinação (rotina/campanha/bloqueio etc.) é um
+recorte relevante pro indicador de cobertura (ADR 0001), permitindo separar
+cobertura de rotina de picos pontuais de campanha.
+
+**Decisão:** nova dimensão `dim_estrategia_vacinacao` (chave =
+`estrategia_cobertura`), referenciada por uma nova chave `chave_estrategia`
+na `fct_cobertura_vacinal`. Segue o mesmo padrão de `dim_vacina`: sobe só o
+código por enquanto — `nome_estrategia` fica nulo, pendente do de-para
+oficial do PNI (mesma pendência já registrada pra vacina/dose).
+
+Distribuição real validada (23/08/2026, 7 meses, ~115M linhas): 16 códigos
+distintos (0 a 15), volume concentrado em poucos códigos (maior: 90M
+registros; menor: 8k), e ~686k linhas (~0,6%) com o código nulo — caem em
+`'SEM INFORMACAO'` na silver (`estrategia_cobertura`), mesma convenção das
+outras dimensões pequenas.
+
+**Consequência:** mais uma chave na fato (6 chaves ao todo), mas a
+dimensão continua pequena (17 linhas: 16 códigos + 'SEM INFORMACAO'). O
+indicador de cobertura por estratégia já funciona pra contagem de doses;
+só o rótulo textual (nome da estratégia) depende do de-para externo.

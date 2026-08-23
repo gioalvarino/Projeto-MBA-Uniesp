@@ -142,7 +142,14 @@ com_perfil as (
         case
             when tp_sexo_paciente in ('F', 'M') then tp_sexo_paciente
             else 'SEM INFORMACAO'
-        end as sexo_cobertura
+        end as sexo_cobertura,
+
+        -- Estratégia de vacinação (adendo ADR 0008, 23/08/2026): nulo em
+        -- ~686k de ~115M linhas (~0,6%) — cai em 'SEM INFORMACAO', mesma
+        -- convenção das outras dimensões pequenas. Nome oficial (rotina,
+        -- campanha, bloqueio etc.) ainda pendente do de-para do PNI —
+        -- mesma pendência de co_vacina/co_dose_vacina.
+        coalesce(co_estrategia_vacinacao, 'SEM INFORMACAO') as estrategia_cobertura
 
     from com_cobertura
 

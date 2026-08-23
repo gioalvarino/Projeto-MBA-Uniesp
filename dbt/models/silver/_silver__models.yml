@@ -72,3 +72,12 @@ models:
           - accepted_values:
               arguments:
                 values: ["F", "M", "SEM INFORMACAO"]
+
+      - name: estrategia_cobertura
+        description: >
+          Código de estratégia de vacinação padronizado (adendo ADR 0008,
+          23/08/2026): co_estrategia_vacinacao direto, nulo (~686k de ~115M
+          linhas, ~0,6%) caindo em 'SEM INFORMACAO'. Nome oficial (rotina,
+          campanha, bloqueio etc.) ainda pendente do de-para do PNI.
+        tests:
+          - not_null

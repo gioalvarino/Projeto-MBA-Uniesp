@@ -50,13 +50,27 @@ models:
           - unique
           - not_null
 
+  - name: dim_estrategia_vacinacao
+    description: >
+      Dimensão de estratégia de vacinação (rotina/campanha/bloqueio etc.) —
+      adendo ao ADR 0008 (23/08/2026). Segue o mesmo padrão de dim_vacina:
+      só o código por enquanto, nome_estrategia pendente do de-para oficial
+      do PNI.
+    columns:
+      - name: chave_estrategia
+        description: "estrategia_cobertura (co_estrategia_vacinacao, ou 'SEM INFORMACAO' quando nulo)"
+        tests:
+          - unique
+          - not_null
+
   - name: fct_cobertura_vacinal
     description: >
-      Fato de cobertura vacinal (ADR 0008 + adendo 23/08/2026). Grão
+      Fato de cobertura vacinal (ADR 0008 + adendos 23/08/2026). Grão
       agregado: uma linha por combinação de data_vacina + chave_municipio +
-      chave_vacina + chave_faixa_etaria + chave_perfil, com qtd_doses como
-      métrica. Sem dado pessoal identificável direto (ADR 0005) — raça/cor e
-      sexo entram agregados, nunca ligados a um indivíduo.
+      chave_vacina + chave_faixa_etaria + chave_perfil + chave_estrategia,
+      com qtd_doses como métrica. Sem dado pessoal identificável direto
+      (ADR 0005) — raça/cor e sexo entram agregados, nunca ligados a um
+      indivíduo.
     columns:
       - name: data_vacina
         tests:
@@ -97,6 +111,14 @@ models:
               arguments:
                 to: ref('dim_perfil_paciente')
                 field: chave_perfil
+
+      - name: chave_estrategia
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_estrategia_vacinacao')
+                field: chave_estrategia
 
       - name: qtd_doses
         description: Contagem de doses aplicadas na combinação de chaves da linha.

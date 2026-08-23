@@ -36,8 +36,8 @@ por mês) → BigQuery bronze/silver/gold (dbt-bigquery) → GitHub Actions
 | Frente | Responsável | Entregáveis |
 |---|---|---|
 | Engenharia | Giovanna | ingestão, projeto dbt, GitHub Actions, IAM/BigQuery |
-| Dados e qualidade | a definir | modelos SQL silver/gold, testes em YAML, dicionário de dados |
-| Consumo e narrativa | a definir | modelo estrela, Power BI, DAX, ADRs, README, apresentação |
+| Dados e qualidade | Andressa | modelos SQL silver/gold, testes em YAML, dicionário de dados |
+| Consumo e narrativa | Ellen | modelo estrela, Power BI, DAX, ADRs, README, apresentação |
 
 Regra combinada: ninguém faz merge de código que não sabe explicar.
 
@@ -51,12 +51,11 @@ Regra combinada: ninguém faz merge de código que não sabe explicar.
 
 ## Controle de custo (BigQuery)
 
-O crédito de Free Trial do projeto já expirou, então não há colchão: qualquer
-consulta acima do *always-free* (10 GiB armazenamento + 1 TiB consulta/mês) vai
-direto ao cartão. Antes de qualquer carga real, configurar a cota diária de
-consulta do BigQuery (barreira dura — recusa a consulta em vez de cobrar) e o
-`maximum_bytes_billed` no `profiles.yml` do dbt. Detalhes e checklist completo
-no handoff do projeto.
+Qualquer consulta acima do *always-free* (10 GiB armazenamento + 1 TiB
+consulta/mês) vai direto ao cartão. Antes de qualquer carga real, configurar a
+cota diária de consulta do BigQuery (barreira dura — recusa a consulta em vez
+de cobrar) e o `maximum_bytes_billed` no `profiles.yml` do dbt. Detalhes e
+checklist completo no handoff do projeto.
 
 ## Status atual
 
