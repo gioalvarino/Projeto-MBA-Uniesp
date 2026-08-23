@@ -96,6 +96,32 @@ precisar de um de-para externo como vacina/dose/estratégia.
 - `co_dose_vacina`
 - `co_estrategia_vacinacao`
 
+**Pesquisa feita em 23/08/2026** (não resolveu, mas fica registrado o que
+foi investigado, pra não repetir o esforço):
+
+- `co_estrategia_vacinacao`: existe uma tabela oficial do RNDS/Ministério
+  da Saúde (`CodeSystem BREstrategiaVacinacao`), com 9 valores fixos (1
+  Rotina, 2 Especial, 3 Bloqueio, 4 Intensificação, 5 Campanha
+  indiscriminada, 6 Campanha seletiva, 7 Soroterapia, 8 Serviço Privado, 9
+  Monitoramento rápido de cobertura vacinal). **Não usada**: o dado real
+  tem 16 códigos (`0` a `15`), e essa tabela só cobre `1` a `9` — o SI-PNI
+  (sistema de origem do CSV) parece usar uma numeração própria, mais ampla,
+  que não bate com o padrão FHIR mais novo do RNDS. Sem confirmação de que
+  os códigos que batem numericamente (1-9) significam a mesma coisa.
+- `co_vacina`/`co_dose_vacina`: achada só uma tabela de referência estadual
+  (Goiás, guia de implementação FHIR), não confirmada como a tabela
+  nacional do SI-PNI.
+- Os manuais oficiais do SI-PNI (`pni.datasus.gov.br/sipni/documentos/manual_sipni.pdf`
+  e `pni.datasus.gov.br/Download/Api/API-Manual_api.pdf`) não puderam ser
+  acessados (infraestrutura antiga, erros de redirecionamento/timeout).
+- **Caminho alternativo mais confiável, se alguém tiver acesso operacional
+  ao SI-PNI** (não só ao portal de dados abertos): os dropdowns de busca do
+  próprio sistema mostram os nomes (ex. "Rotina", "Campanha") ao lado dos
+  filtros — dá pra comparar visualmente qual nome corresponde a qual
+  código, sem depender de documentação de terceiros.
+- Até resolver, o Power BI mostra os códigos crus — decisão consciente,
+  documentada aqui, em vez de arriscar um de-para incorreto.
+
 ## Regras de qualidade conhecidas
 
 - Nomes de município inconsistentes entre estabelecimento e paciente (ex.:
