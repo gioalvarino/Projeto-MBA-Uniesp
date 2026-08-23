@@ -18,9 +18,6 @@ target/
 logs/
 dbt_packages/
 
-# Power BI (binário, não versiona - uma dona por vez)
-*.pbix
-
 # Dados brutos baixados do portal (não versionar dado, só código).
 # Os seeds do dbt (dbt/seeds/*.csv) NÃO entram aqui — são dado de
 # referência fixo (código, não dado baixado) e precisam estar

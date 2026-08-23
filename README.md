@@ -47,7 +47,9 @@ Regra combinada: ninguém faz merge de código que não sabe explicar.
   final feito fora do controle de versão.
 - A documentação (`docs/`) evolui junto com o projeto: cada decisão relevante
   vira um ADR no momento em que é tomada, não no fim do semestre.
-- `.pbix` é arquivo binário e não faz merge — uma dona por vez.
+- `.pbix` é arquivo binário e não faz merge — uma dona por vez. Mesmo assim,
+  desde 24/08/2026 o arquivo passou a ser versionado no repositório (decisão
+  revista); a regra de "uma dona por vez" ao editar continua valendo.
 
 ## Controle de custo (BigQuery)
 
