@@ -22,6 +22,16 @@
 -- digitação da fonte), sem nulo de verdade; raça/cor vem quase sempre
 -- preenchida (só 4 linhas nulas em ~115M) e o nome já vem pronto da fonte
 -- (no_raca_cor_paciente), sem precisar de de-para externo como vacina/dose.
+--
+-- nome_vacina_cobertura / nome_dose_cobertura / nome_estrategia_cobertura:
+-- achado real (23/08/2026, ao conectar o Power BI) — a bronze tem MUITAS
+-- colunas além das documentadas originalmente em _silver__sources.yml
+-- (checado só contra uma inspeção parcial do cabeçalho em 22/08/2026), e
+-- três delas (ds_nome, ds_tipo_dose, no_estrategia) já trazem o nome
+-- pronto pra co_vacina/co_dose_vacina/co_estrategia_vacinacao — a mesma
+-- pendência de de-para pesquisada (sem sucesso) em fontes externas no dia
+-- anterior. Validado 1-pra-1 contra os 7 meses reais antes de aplicar
+-- (nenhum código com nome divergente) — ver adendo do ADR 0008.
 
 with bronze as (
 
@@ -57,6 +67,9 @@ tipado as (
         co_raca_cor_paciente,
         no_raca_cor_paciente,
         tp_sexo_paciente,
+        ds_nome            as nome_vacina_bruto,
+        ds_tipo_dose       as nome_dose_bruto,
+        no_estrategia      as nome_estrategia_bruto,
 
         -- Município de cobertura (ADR 0007): residência como principal,
         -- fallback pra aplicação quando a residência não vem preenchida. A
@@ -149,7 +162,17 @@ com_perfil as (
         -- convenção das outras dimensões pequenas. Nome oficial (rotina,
         -- campanha, bloqueio etc.) ainda pendente do de-para do PNI —
         -- mesma pendência de co_vacina/co_dose_vacina.
-        coalesce(co_estrategia_vacinacao, 'SEM INFORMACAO') as estrategia_cobertura
+        coalesce(co_estrategia_vacinacao, 'SEM INFORMACAO') as estrategia_cobertura,
+
+        -- Nome de vacina/dose/estratégia (achado real, 23/08/2026): a fonte
+        -- já traz pronto (ds_nome, ds_tipo_dose, no_estrategia), sem
+        -- precisar de de-para externo. Validado 1-pra-1 contra os 7 meses
+        -- reais (nenhum código com nome divergente) antes de aplicar.
+        -- coalesce por segurança, mesmo padrão das outras colunas *_cobertura
+        -- (código '0' e nulo de estratégia também não têm nome na fonte).
+        coalesce(nome_vacina_bruto, 'SEM INFORMACAO')     as nome_vacina_cobertura,
+        coalesce(nome_dose_bruto, 'SEM INFORMACAO')       as nome_dose_cobertura,
+        coalesce(nome_estrategia_bruto, 'SEM INFORMACAO') as nome_estrategia_cobertura
 
     from com_cobertura
 

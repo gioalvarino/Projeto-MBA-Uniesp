@@ -7,6 +7,12 @@
 -- ('ESTRANGEIRO'/'SEM INFORMACAO') — cobre os casos especiais como
 -- membros próprios da dimensão, sem sentinela numérico arbitrário.
 --
+-- Join por id_municipio_6d, NÃO id_municipio (achado real, 23/08/2026 —
+-- ver 2º refinamento do ADR 0009): municipio_cobertura é o código legado
+-- de 6 dígitos do DATASUS/SUS, não o código de 7 dígitos do IBGE — o join
+-- direto por id_municipio não batia com NENHUM município real (100% da
+-- dimensão ficava sem nome/população, achado ao conectar o Power BI).
+--
 -- nome_municipio e populacao ficam nulos só pros membros especiais
 -- ('ESTRANGEIRO'/'SEM INFORMACAO' não têm código IBGE de verdade pra
 -- casar com a Base dos Dados) — pra município real, agora vêm
@@ -49,4 +55,4 @@ select
 
 from silver s
 left join ibge i
-    on s.municipio_cobertura = i.id_municipio
+    on s.municipio_cobertura = i.id_municipio_6d

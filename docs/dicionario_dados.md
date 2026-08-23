@@ -21,8 +21,8 @@
 | `dt_vacina` | Data do evento (vem com hora `00:00:00-03`; é DATE, não timestamp) |
 | `co_municipio_estabelecimento` / `co_municipio_paciente` | Códigos IBGE — as duas geografias possíveis |
 | `co_pais_paciente` | País de residência do paciente ('10' = Brasil). Usado na resolução de geografia de cobertura (ADR 0007) |
-| `co_vacina`, `co_dose_vacina` | Códigos numéricos; precisam de de-para do dicionário oficial do PNI (pendente) |
-| `co_estrategia_vacinacao` | Código da estratégia de vacinação; de-para pendente |
+| `co_vacina`, `co_dose_vacina` | Códigos numéricos; nome já vem pronto na própria fonte (`ds_nome`, `ds_tipo_dose` — achado real 23/08/2026, ver seção "De-para" abaixo) |
+| `co_estrategia_vacinacao` | Código da estratégia de vacinação; nome pronto em `no_estrategia` (mesmo achado) |
 | `st_documento` | **Confirmado só `"final"`** nos 7 meses reais — sem valor analítico; removido da silver em 23/08/2026 (segue só na bronze) |
 | `sg_uf_paciente` / `sg_uf_estabelecimento` | Sigla da UF — mais confiável que os nomes por extenso (`no_uf_*`) pra filtrar/agrupar |
 | `nu_idade_paciente` | Idade do paciente — ver regra de qualidade abaixo |
@@ -90,37 +90,85 @@ As 4 linhas nulas caem em `'99'`/`'SEM INFORMACAO'` em
 usa pra "sem informação" explícito. O nome já vem pronto da fonte, sem
 precisar de um de-para externo como vacina/dose/estratégia.
 
-## Códigos pendentes de de-para
+## De-para de vacina/dose/estratégia — RESOLVIDO (achado real, 23/08/2026)
 
-- `co_vacina`
-- `co_dose_vacina`
-- `co_estrategia_vacinacao`
+Ao conectar o Power BI, percebemos que a bronze tem MUITO mais colunas do
+que o subconjunto documentado em 22/08/2026 (ver "Cabeçalho completo da
+bronze" abaixo) — e três delas já trazem o nome pronto por linha:
 
-**Pesquisa feita em 23/08/2026** (não resolveu, mas fica registrado o que
-foi investigado, pra não repetir o esforço):
+| Código | Nome (coluna da fonte) |
+|---|---|
+| `co_vacina` | `ds_nome` |
+| `co_dose_vacina` | `ds_tipo_dose` |
+| `co_estrategia_vacinacao` | `no_estrategia` |
+
+Validado 1-pra-1 contra os 7 meses reais antes de aplicar (mesma checagem
+feita pra raça/cor): nenhum código apareceu com mais de um nome distinto.
+Amostra real (23/08/2026):
+
+- `co_vacina`/`ds_nome`: 90 códigos distintos, ex. `14` → "vacina febre
+  amarela (atenuada)" (5.045.301 doses), `33` → "vacina influenza
+  trivalente (fragmentada, inativada)" (44.115.030 doses).
+- `co_dose_vacina`/`ds_tipo_dose`: ex. `1` → "1ª Dose" (19.451.296), `9` →
+  "Única" (52.454.494), `38` → "Reforço" (10.251.872).
+- `co_estrategia_vacinacao`/`no_estrategia`: os 16 códigos batem com a
+  tabela oficial do RNDS pra 1-9 (ver pesquisa abaixo) **e também** cobrem
+  10-15 com nome próprio (`10` Pesquisa, `11` Pré-exposição, `12`
+  Pós-exposição, `13` Reexposição, `14` Vacinação Escolar, `15` Operação
+  Gota) — resolve de vez o range que a tabela do RNDS não cobria. Código
+  `0` e nulo (`NULL`) não têm nome na fonte — ambos caem em `'SEM
+  INFORMACAO'`, mesmo padrão das outras dimensões pequenas.
+
+**Implementado em `stg_pni__doses_aplicadas`** (`nome_vacina_cobertura`,
+`nome_dose_cobertura`, `nome_estrategia_cobertura`) e propagado pra
+`dim_vacina.nome_vacina`/`nome_dose` e
+`dim_estrategia_vacinacao.nome_estrategia` na gold — nenhuma das três
+pendências abaixo (pesquisa de 23/08/2026, mantida por registro histórico)
+precisou ser usada.
+
+<details>
+<summary>Pesquisa de de-para externo feita em 23/08/2026 (superada pelo achado acima, mantida só como registro)</summary>
 
 - `co_estrategia_vacinacao`: existe uma tabela oficial do RNDS/Ministério
   da Saúde (`CodeSystem BREstrategiaVacinacao`), com 9 valores fixos (1
   Rotina, 2 Especial, 3 Bloqueio, 4 Intensificação, 5 Campanha
   indiscriminada, 6 Campanha seletiva, 7 Soroterapia, 8 Serviço Privado, 9
-  Monitoramento rápido de cobertura vacinal). **Não usada**: o dado real
-  tem 16 códigos (`0` a `15`), e essa tabela só cobre `1` a `9` — o SI-PNI
-  (sistema de origem do CSV) parece usar uma numeração própria, mais ampla,
-  que não bate com o padrão FHIR mais novo do RNDS. Sem confirmação de que
-  os códigos que batem numericamente (1-9) significam a mesma coisa.
-- `co_vacina`/`co_dose_vacina`: achada só uma tabela de referência estadual
-  (Goiás, guia de implementação FHIR), não confirmada como a tabela
-  nacional do SI-PNI.
-- Os manuais oficiais do SI-PNI (`pni.datasus.gov.br/sipni/documentos/manual_sipni.pdf`
-  e `pni.datasus.gov.br/Download/Api/API-Manual_api.pdf`) não puderam ser
-  acessados (infraestrutura antiga, erros de redirecionamento/timeout).
-- **Caminho alternativo mais confiável, se alguém tiver acesso operacional
-  ao SI-PNI** (não só ao portal de dados abertos): os dropdowns de busca do
-  próprio sistema mostram os nomes (ex. "Rotina", "Campanha") ao lado dos
-  filtros — dá pra comparar visualmente qual nome corresponde a qual
-  código, sem depender de documentação de terceiros.
-- Até resolver, o Power BI mostra os códigos crus — decisão consciente,
-  documentada aqui, em vez de arriscar um de-para incorreto.
+  Monitoramento rápido de cobertura vacinal). Não cobria os códigos 10-15
+  — resolvido pelo achado acima (`no_estrategia` já traz nome pra todos).
+- `co_vacina`/`co_dose_vacina`: só se achou uma tabela de referência
+  estadual (Goiás, guia de implementação FHIR), não confirmada como a
+  tabela nacional do SI-PNI — ficou sem uso, resolvido pelo achado acima
+  (`ds_nome`/`ds_tipo_dose`).
+- Os manuais oficiais do SI-PNI não puderam ser acessados (infraestrutura
+  antiga, erros de redirecionamento/timeout) — não foi mais necessário.
+</details>
+
+## Cabeçalho completo da bronze (achado real, 23/08/2026)
+
+A confirmação de 22/08/2026 (seção acima) listou só um subconjunto do
+cabeçalho real do CSV. Consulta completa contra
+`INFORMATION_SCHEMA.COLUMNS` em 23/08/2026 revelou ~56 colunas ao todo.
+Além das já documentadas (Campos-chave) e das três resolvidas acima, o
+restante ainda não avança pra silver/gold:
+
+- **Estabelecimento**: `co_cnes_estabelecimento`, `co_natureza_estabelecimento`/`ds_natureza_estabelecimento`,
+  `co_tipo_estabelecimento`/`ds_tipo_estabelecimento`, `no_fantasia_estalecimento`,
+  `no_razao_social_estabelecimento`, `no_municipio_estabelecimento`, `no_uf_estabelecimento`.
+- **Lote/fabricante da vacina**: `co_lote_vacina`, `co_vacina_fabricante`/`ds_vacina_fabricante`,
+  `sg_imunobiologico`, `co_vacina_grupo_atendimento`/`no_grupo_atendimento`.
+- **Aplicação/categoria**: `co_local_aplicacao`/`ds_local_aplicacao`, `co_via_administracao`/`ds_via_administracao`,
+  `co_categoria`/`ds_categoria`, `co_condicao_maternal`/`ds_condicao_maternal`.
+- **Paciente (adicional)**: `co_paciente`, `co_etnia_indigena_paciente`/`no_etnia_indigena_paciente`,
+  `no_pais_paciente`, `no_uf_paciente`, `nu_cep_paciente` (já marcado pra não ir pro BI),
+  `ds_nacionalidade_paciente` (já marcado pra não ir pro BI).
+- **Metadados de origem** (já confirmados sem valor analítico ou marcados
+  pra não ir pro BI): `co_troca_documento`, `co_sistema_origem`/`ds_sistema_origem`,
+  `co_origem_registro`/`ds_origem_registro`, `_PARTITIONTIME` (metadado do BigQuery, não da fonte).
+
+Discussão em andamento sobre novas dimensões de estabelecimento e de
+lote/fabricante (pedido 23/08/2026) — ver adendo correspondente no ADR
+0008 quando a decisão de grão for fechada (risco de cardinalidade alta,
+mesmo problema que levou ao grão mensal da fato).
 
 ## Regras de qualidade conhecidas
 
@@ -141,6 +189,12 @@ foi investigado, pra não repetir o esforço):
   completos). Tratados como vazio na silver (ver ADR 0007, segundo
   refinamento).
 - `ds_vacina_fabricante` nulo em parte dos registros.
+- `co_municipio_paciente`/`co_municipio_estabelecimento` (e portanto
+  `municipio_cobertura` na silver) usam o código **legado de 6 dígitos**
+  do DATASUS/SUS, não o código de 7 dígitos do IBGE usado pela Base dos
+  Dados — achado real, 23/08/2026, ao conectar o Power BI (o join de
+  `dim_municipio` não batia com NENHUM município real até a correção). Ver
+  2º refinamento do ADR 0009.
 - `no_fantasia_estalecimento` — o typo é da própria fonte (confirmado no
   CSV real, não é sanitização nossa). Mantido cru na bronze (fidelidade ao
   dado original), renomear só na silver.

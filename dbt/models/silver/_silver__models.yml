@@ -77,7 +77,28 @@ models:
         description: >
           Código de estratégia de vacinação padronizado (adendo ADR 0008,
           23/08/2026): co_estrategia_vacinacao direto, nulo (~686k de ~115M
-          linhas, ~0,6%) caindo em 'SEM INFORMACAO'. Nome oficial (rotina,
-          campanha, bloqueio etc.) ainda pendente do de-para do PNI.
+          linhas, ~0,6%) caindo em 'SEM INFORMACAO'.
+        tests:
+          - not_null
+
+      - name: nome_vacina_cobertura
+        description: >
+          Nome da vacina já vem pronto na fonte (ds_nome) — achado real,
+          23/08/2026, ao conectar o Power BI. Sem de-para externo pendente.
+        tests:
+          - not_null
+
+      - name: nome_dose_cobertura
+        description: >
+          Nome da dose já vem pronto na fonte (ds_tipo_dose) — mesmo
+          achado real de nome_vacina_cobertura.
+        tests:
+          - not_null
+
+      - name: nome_estrategia_cobertura
+        description: >
+          Nome da estratégia de vacinação já vem pronto na fonte
+          (no_estrategia) — mesmo achado real. Código '0' e nulo também não
+          têm nome na fonte, caem em 'SEM INFORMACAO' junto com o código.
         tests:
           - not_null

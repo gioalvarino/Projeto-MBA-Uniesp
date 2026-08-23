@@ -3,11 +3,13 @@ version: 2
 models:
   - name: dim_tempo
     description: >
-      Dimensão de calendário gerada (ADR 0008), grão diário, cobrindo
-      2026 inteiro. Não vem da fonte.
+      Dimensão de calendário gerada (ADR 0008 + adendo 23/08/2026 — grão
+      mensal, era diário), cobrindo 2026 inteiro. Não vem da fonte.
     columns:
-      - name: data
-        description: Chave da dimensão (mesmo valor de data_vacina na fato).
+      - name: mes
+        description: >
+          Chave da dimensão — primeiro dia do mês (mesmo valor de
+          mes_vacina na fato).
         tests:
           - unique
           - not_null
@@ -16,7 +18,11 @@ models:
     description: >
       Dimensão de município de cobertura (ADR 0007 + ADR 0008). Inclui
       membros especiais pra 'ESTRANGEIRO' e 'SEM INFORMACAO'.
-      nome_municipio/populacao pendentes de enriquecimento externo.
+      nome_municipio/populacao vêm da Base dos Dados/IBGE (ADR 0009), join
+      por código de 6 dígitos (achado real 23/08/2026 — ver 2º refinamento
+      do ADR 0009). Testes de not_null abaixo existem justamente pra pegar
+      esse tipo de falha de join cedo (antes não existiam, e o bug do join
+      passou 1 build inteiro sem ser detectado).
     columns:
       - name: chave_municipio
         description: >
@@ -26,15 +32,47 @@ models:
           - unique
           - not_null
 
+      - name: nome_municipio
+        description: >
+          Nome do município (Base dos Dados/IBGE). Nulo só pros membros
+          especiais ('ESTRANGEIRO'/'SEM INFORMACAO') — qualquer município
+          real sem nome é sinal de falha no join (ver 2º refinamento do
+          ADR 0009).
+        tests:
+          - not_null:
+              config:
+                where: "tipo_registro = 'Município válido'"
+
+      - name: populacao
+        description: >
+          Estimativa populacional mais recente disponível (Base dos
+          Dados/IBGE). Nulo pros membros especiais e pra 1 município
+          conhecido sem estimativa em nenhum ano (Boa Esperança do
+          Norte/MT — ver ADR 0009); por isso severity warn, não error.
+        tests:
+          - not_null:
+              config:
+                where: "tipo_registro = 'Município válido'"
+                severity: warn
+
   - name: dim_vacina
     description: >
-      Dimensão de vacina/dose (ADR 0008). nome_vacina/nome_dose pendentes
-      do de-para oficial do PNI.
+      Dimensão de vacina/dose (ADR 0008). nome_vacina/nome_dose resolvidos
+      direto da fonte (ds_nome/ds_tipo_dose) em 23/08/2026 — sem de-para
+      externo pendente (achado real, ver adendo do ADR 0008).
     columns:
       - name: chave_vacina
         description: "co_vacina || '-' || co_dose_vacina"
         tests:
           - unique
+          - not_null
+
+      - name: nome_vacina
+        tests:
+          - not_null
+
+      - name: nome_dose
+        tests:
           - not_null
 
   - name: dim_perfil_paciente
@@ -53,9 +91,9 @@ models:
   - name: dim_estrategia_vacinacao
     description: >
       Dimensão de estratégia de vacinação (rotina/campanha/bloqueio etc.) —
-      adendo ao ADR 0008 (23/08/2026). Segue o mesmo padrão de dim_vacina:
-      só o código por enquanto, nome_estrategia pendente do de-para oficial
-      do PNI.
+      adendo ao ADR 0008 (23/08/2026). nome_estrategia resolvido direto da
+      fonte (no_estrategia) em 23/08/2026 — sem de-para externo pendente
+      (mesmo achado de dim_vacina, ver adendo do ADR 0008).
     columns:
       - name: chave_estrategia
         description: "estrategia_cobertura (co_estrategia_vacinacao, ou 'SEM INFORMACAO' quando nulo)"
@@ -63,22 +101,27 @@ models:
           - unique
           - not_null
 
+      - name: nome_estrategia
+        tests:
+          - not_null
+
   - name: fct_cobertura_vacinal
     description: >
-      Fato de cobertura vacinal (ADR 0008 + adendos 23/08/2026). Grão
-      agregado: uma linha por combinação de data_vacina + chave_municipio +
-      chave_vacina + chave_faixa_etaria + chave_perfil + chave_estrategia,
-      com qtd_doses como métrica. Sem dado pessoal identificável direto
-      (ADR 0005) — raça/cor e sexo entram agregados, nunca ligados a um
-      indivíduo.
+      Fato de cobertura vacinal (ADR 0008 + adendos 23/08/2026, inclusive
+      mudança de grão diário pra mensal). Grão agregado: uma linha por
+      combinação de mes_vacina + chave_municipio + chave_vacina +
+      chave_faixa_etaria + chave_perfil + chave_estrategia, com qtd_doses
+      como métrica. Sem dado pessoal identificável direto (ADR 0005) —
+      raça/cor e sexo entram agregados, nunca ligados a um indivíduo.
     columns:
-      - name: data_vacina
+      - name: mes_vacina
+        description: data_vacina truncada pro primeiro dia do mês (date_trunc(..., month)).
         tests:
           - not_null
           - relationships:
               arguments:
                 to: ref('dim_tempo')
-                field: data
+                field: mes
 
       - name: chave_municipio
         tests:

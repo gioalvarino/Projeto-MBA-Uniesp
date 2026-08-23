@@ -21,6 +21,13 @@ sources:
           abreviados (co_, no_, dt_, st_, sg_, tp_, ds_, nu_), diferente dos
           nomes por extenso do dicionário da API do PNI — corrigido aqui e
           em docs/dicionario_dados.md.
+
+          **Correção (achado real, 23/08/2026):** a confirmação de 22/08
+          listava só um subconjunto do cabeçalho real — a bronze tem bem
+          mais colunas (~56 no total, checado via INFORMATION_SCHEMA.COLUMNS
+          em 23/08/2026). As colunas abaixo são as que a silver já usa;
+          `docs/dicionario_dados.md` lista o restante (estabelecimento,
+          lote/fabricante, outras) que ainda não avança pra silver/gold.
         columns:
           - name: co_documento
             description: UUID por dose aplicada — chave de deduplicação na silver.
@@ -42,9 +49,18 @@ sources:
               co_municipio_paciente também nulo); valores estrangeiros
               observados: '24' (Paraguai), '22' (Bolívia).
           - name: co_vacina
-            description: Código numérico da vacina. De-para oficial ainda pendente (ver dicionário).
+            description: Código numérico da vacina.
+          - name: ds_nome
+            description: >
+              Nome da vacina, já pronto na fonte (achado real, 23/08/2026)
+              — elimina a pendência de de-para externo pra co_vacina.
           - name: co_dose_vacina
-            description: Código numérico da dose. De-para oficial ainda pendente.
+            description: Código numérico da dose.
+          - name: ds_tipo_dose
+            description: >
+              Nome/rótulo da dose, já pronto na fonte (achado real,
+              23/08/2026) — elimina a pendência de de-para externo pra
+              co_dose_vacina.
           - name: nu_idade_paciente
             description: >
               Idade do paciente. "0" significa bebê com menos de 1 ano, não
@@ -73,7 +89,13 @@ sources:
           - name: sg_uf_estabelecimento
             description: Sigla da UF do estabelecimento que aplicou a dose.
           - name: co_estrategia_vacinacao
-            description: Código da estratégia de vacinação. De-para oficial ainda pendente.
+            description: Código da estratégia de vacinação.
+          - name: no_estrategia
+            description: >
+              Nome da estratégia de vacinação, já pronto na fonte (achado
+              real, 23/08/2026) — elimina a pendência de de-para externo
+              pra co_estrategia_vacinacao. Nulo quando o código também é
+              nulo ou '0'.
 
       - name: _carga_log
         description: >

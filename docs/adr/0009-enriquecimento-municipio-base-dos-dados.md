@@ -60,6 +60,38 @@ correto e é mantido (resolve o caso geral e qualquer lacuna de só-um-ano
 que apareça no futuro); esse caso específico só não tem dado nenhum pra
 usar.
 
+## Segundo refinamento (achado real, 23/08/2026 — ao conectar o Power BI)
+
+Depois de conectar o Power BI, Giovanna reparou que `dim_municipio` tinha
+carregado com `nome_municipio`/`populacao`/`ano_populacao` **vazios pra
+TODOS os municípios**, não só o caso isolado de Boa Esperança do
+Norte/MT do refinamento acima. Diagnóstico: `municipio_cobertura` (vindo
+de `co_municipio_paciente`/`co_municipio_estabelecimento` na bronze) usa
+o código **legado de 6 dígitos** que o DATASUS/SUS usa historicamente
+(ex. `110001`), não o código de 7 dígitos do IBGE (`1100015`) que a Base
+dos Dados usa em `id_municipio` — o 7º dígito é um dígito verificador,
+calculado a partir dos 6 primeiros. A suposição original deste ADR
+("`id_municipio` é o mesmo código de 7 dígitos usado em
+`municipio_cobertura`") estava errada. O join original comparava strings
+de tamanhos diferentes e nunca batia — passou pelo `dbt build` de
+23/08/2026 sem erro porque **não existia teste de `not_null` em
+`nome_municipio`/`populacao` na própria `dim_municipio`**; o único teste
+relacionado (`not_null` em `stg_ibge__municipios.populacao`) testa a Base
+dos Dados isoladamente, sem envolver o join com o PNI — por isso o bug não
+apareceu mesmo com o WARN=1 já presente naquele build (esse WARN é sobre o
+caso isolado do refinamento acima, não sobre o join).
+
+**Correção:** `stg_ibge__municipios` passa a expor `id_municipio_6d`
+(`substr(id_municipio, 1, 6)`, truncando o dígito verificador), e
+`dim_municipio` faz o `left join` por `id_municipio_6d` em vez de
+`id_municipio`. Testes de `unique`/`not_null` adicionados em
+`id_municipio_6d` e, mais importante, testes de `not_null` novos em
+`dim_municipio.nome_municipio` (severity error) e `dim_municipio.populacao`
+(severity warn, mesmo motivo do caso isolado) com `where: tipo_registro =
+'Município válido'` — esses testes não existiam antes e são o motivo de o
+bug ter passado despercebido por um build inteiro. Pendente: revalidar com
+`dbt build` que o join agora bate pra (quase) todos os 5.570 municípios.
+
 ## Consequências
 
 - `dim_municipio.nome_municipio`/`populacao`/`ano_populacao` passam a vir

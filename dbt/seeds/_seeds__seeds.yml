@@ -29,6 +29,13 @@ seeds:
       chave usada pela fato (`chave_faixa_etaria`) e também define a ordem
       de exibição no Power BI. A linha `ordem = 0` (idade_min/idade_max
       nulos) cobre `idade_paciente` nulo.
+
+      Coluna de rótulo renomeada de `faixa_etaria` pra `nome_faixa_etaria`
+      em 23/08/2026: como o nome da coluna era igual ao nome da tabela, o
+      conector do Power BI pro BigQuery mostrava essa coluna como
+      `[Record]` em vez do texto (achado real ao conectar o Power BI) — o
+      mesmo padrão `nome_*` já usado em `nome_mes`, `nome_vacina`,
+      `nome_estrategia`, `nome_raca_cor_cobertura` evita essa colisão.
     columns:
       - name: ordem
         description: Chave da dimensão e ordem de exibição.
@@ -39,7 +46,7 @@ seeds:
         description: Idade mínima (inclusiva) da faixa, em anos. Nulo na faixa "sem informação".
       - name: idade_max
         description: Idade máxima (inclusiva) da faixa, em anos. Nulo na faixa "sem informação".
-      - name: faixa_etaria
+      - name: nome_faixa_etaria
         description: Rótulo da faixa, pronto pra exibir no Power BI.
         tests:
           - unique

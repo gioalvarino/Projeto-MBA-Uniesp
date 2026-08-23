@@ -1,18 +1,24 @@
--- Fato de cobertura vacinal (ADR 0008). Grão agregado — uma linha por
--- combinação de (data_vacina, chave_municipio, chave_vacina,
--- chave_faixa_etaria, chave_perfil, chave_estrategia), com qtd_doses como
--- métrica. Não é uma linha por dose: essa decisão mantém a gold
--- pequena/rápida no Power BI e reforça o ADR 0005 (nenhum dado pessoal
+-- Fato de cobertura vacinal (ADR 0008 + adendo 23/08/2026 — grão mensal).
+-- Grão agregado — uma linha por combinação de (mes_vacina, chave_municipio,
+-- chave_vacina, chave_faixa_etaria, chave_perfil, chave_estrategia), com
+-- qtd_doses como métrica. Não é uma linha por dose: essa decisão mantém a
+-- gold pequena/rápida no Power BI e reforça o ADR 0005 (nenhum dado pessoal
 -- identificável avança pra gold).
 --
--- As chaves aqui têm que bater exatamente com a lógica de chave usada em
--- dim_municipio.sql, dim_vacina.sql, dim_perfil_paciente.sql e
--- dim_estrategia_vacinacao.sql — ver _gold__models.yml pros testes de
--- relationships que garantem isso.
+-- mes_vacina: data_vacina truncada pro primeiro dia do mês
+-- (date_trunc(..., month)). Antes o grão era diário (data_vacina exata) —
+-- combinado com as chaves chave_perfil/chave_estrategia (adicionadas
+-- 23/08/2026), isso levou a fato a 49 milhões de linhas contra os 7 meses
+-- reais, contrariando o objetivo original do ADR 0008 ("milhares de linhas,
+-- não milhões"). Cobertura vacinal é analisada/reportada quase sempre por
+-- mês/ano, nunca por dia específico — mudar pro grão mensal recupera a
+-- compressão sem perder nenhuma granularidade realmente usada. Ver "Adendo:
+-- grão mensal" em docs/adr/0008-modelo-estrela-gold.md.
 --
--- chave_perfil (raça/cor + sexo) e chave_estrategia (estratégia de
--- vacinação) foram adicionadas em 23/08/2026, adendos ao ADR 0008 — ver
--- docs/adr/0008-modelo-estrela-gold.md.
+-- As chaves aqui têm que bater exatamente com a lógica de chave usada em
+-- dim_tempo.sql, dim_municipio.sql, dim_vacina.sql, dim_perfil_paciente.sql
+-- e dim_estrategia_vacinacao.sql — ver _gold__models.yml pros testes de
+-- relationships que garantem isso.
 
 with silver as (
 
@@ -29,14 +35,14 @@ faixa_etaria as (
 com_chaves as (
 
     select
-        s.data_vacina,
-        coalesce(s.municipio_cobertura, s.uf_cobertura) as chave_municipio,
-        concat(s.co_vacina, '-', s.co_dose_vacina)        as chave_vacina,
+        date_trunc(s.data_vacina, month)                    as mes_vacina,
+        coalesce(s.municipio_cobertura, s.uf_cobertura)      as chave_municipio,
+        concat(s.co_vacina, '-', s.co_dose_vacina)           as chave_vacina,
         -- idade_paciente nulo não bate em nenhuma faixa (BETWEEN com NULL
         -- é NULL) — cai no coalesce pra faixa "sem informação" (ordem 0).
-        coalesce(f.ordem, 0)                               as chave_faixa_etaria,
-        concat(s.raca_cor_cobertura, '-', s.sexo_cobertura) as chave_perfil,
-        s.estrategia_cobertura                              as chave_estrategia
+        coalesce(f.ordem, 0)                                 as chave_faixa_etaria,
+        concat(s.raca_cor_cobertura, '-', s.sexo_cobertura)  as chave_perfil,
+        s.estrategia_cobertura                               as chave_estrategia
 
     from silver s
     left join faixa_etaria f
@@ -45,7 +51,7 @@ com_chaves as (
 )
 
 select
-    data_vacina,
+    mes_vacina,
     chave_municipio,
     chave_vacina,
     chave_faixa_etaria,
@@ -54,4 +60,4 @@ select
     count(*) as qtd_doses
 
 from com_chaves
-group by data_vacina, chave_municipio, chave_vacina, chave_faixa_etaria, chave_perfil, chave_estrategia
+group by mes_vacina, chave_municipio, chave_vacina, chave_faixa_etaria, chave_perfil, chave_estrategia

@@ -7,11 +7,23 @@ models:
       23/08/2026): nome e população por município. População usa a
       estimativa mais recente disponível com valor preenchido até 2025,
       não exatamente 2025 (achado real: Boa Esperança do Norte/MT sem
-      valor pra 2025 — ver ADR 0009). Fonte externa, não versionada por
-      nós.
+      valor pra 2025 — ver ADR 0009). id_municipio_6d é a chave real de
+      join com a silver do PNI (achado real, mesmo dia — código de 6
+      dígitos, não 7 — ver 2º refinamento do ADR 0009). Fonte externa, não
+      versionada por nós.
     columns:
       - name: id_municipio
-        description: Código IBGE do município (7 dígitos) — mesmo formato de municipio_cobertura na silver.
+        description: Código IBGE do município (7 dígitos, com dígito verificador).
+        tests:
+          - unique
+          - not_null
+
+      - name: id_municipio_6d
+        description: >
+          Código de 6 dígitos (id_municipio sem o dígito verificador) — é
+          esse formato que municipio_cobertura usa na silver (achado real,
+          23/08/2026 — ver 2º refinamento do ADR 0009). Chave usada no join
+          com dim_municipio, não id_municipio.
         tests:
           - unique
           - not_null

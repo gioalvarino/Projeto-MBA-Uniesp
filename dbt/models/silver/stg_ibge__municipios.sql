@@ -11,13 +11,22 @@
 -- recente disponível por município evita perder população por causa de uma
 -- lacuna pontual como essa, sem descartar a informação.
 --
--- id_municipio (Base dos Dados) é o mesmo código IBGE de 7 dígitos usado em
--- municipio_cobertura na silver — join direto, sem de-para.
+-- id_municipio_6d (achado real, 23/08/2026 — ver adendo ADR 0009):
+-- municipio_cobertura NÃO é o código de 7 dígitos do IBGE — é o código
+-- legado de 6 dígitos que o DATASUS/SUS usa historicamente (o código de 7
+-- dígitos = código de 6 dígitos + 1 dígito verificador calculado). O join
+-- direto por id_municipio (7 dígitos) contra municipio_cobertura (6
+-- dígitos) não batia NUNCA: 100% dos municípios reais ficavam sem
+-- nome/população no Power BI, não só o 1 caso de população nula encontrado
+-- antes (esse era um problema diferente, isolado, da Base dos Dados em si
+-- — ver comentário abaixo). id_municipio_6d trunca o 7º dígito
+-- (verificador) da Base dos Dados pra casar com o formato do PNI.
 
 with diretorio as (
 
     select
         id_municipio,
+        substr(id_municipio, 1, 6) as id_municipio_6d,
         nome     as nome_municipio,
         sigla_uf
     from {{ source('bd_diretorios_brasil', 'municipio') }}
@@ -43,6 +52,7 @@ populacao_mais_recente as (
 
 select
     d.id_municipio,
+    d.id_municipio_6d,
     d.nome_municipio,
     d.sigla_uf,
     p.populacao,

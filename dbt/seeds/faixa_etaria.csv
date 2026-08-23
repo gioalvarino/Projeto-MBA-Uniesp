@@ -1,4 +1,4 @@
-ordem,idade_min,idade_max,faixa_etaria
+ordem,idade_min,idade_max,nome_faixa_etaria
 0,,,Sem informação
 1,0,0,Menor de 1 ano
 2,1,1,1 ano
