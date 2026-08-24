@@ -1,0 +1,116 @@
+{
+  "name": "PNI Cobertura Vacinal",
+  "dataColors": [
+    "#0B3D59",
+    "#E5533C",
+    "#1C7293",
+    "#02C39A",
+    "#5B6B75",
+    "#EF988A",
+    "#82B1C4",
+    "#A03A2A",
+    "#74DEC7",
+    "#91A8B4",
+    "#0A2A3D",
+    "#E4EAEC"
+  ],
+  "background": "#F4F7F8",
+  "foreground": "#1F2A33",
+  "tableAccent": "#0B3D59",
+  "good": "#02C39A",
+  "neutral": "#5B6B75",
+  "bad": "#E5533C",
+  "maximum": "#02C39A",
+  "center": "#1C7293",
+  "minimum": "#E5533C",
+  "null": "#E4EAEC",
+  "hyperlink": "#1C7293",
+  "visitedHyperlink": "#1C7293",
+  "textClasses": {
+    "callout": {
+      "fontFace": "Cambria"
+    },
+    "title": {
+      "fontFace": "Cambria"
+    },
+    "header": {
+      "fontFace": "Cambria"
+    },
+    "label": {
+      "fontFace": "Calibri"
+    }
+  },
+  "visualStyles": {
+    "*": {
+      "*": {
+        "background": [
+          {
+            "color": {
+              "solid": {
+                "color": "#F4F7F8"
+              }
+            }
+          }
+        ],
+        "outspacePane": [
+          {
+            "backgroundColor": {
+              "solid": {
+                "color": "#F4F7F8"
+              }
+            }
+          }
+        ],
+        "filterCard": [
+          {
+            "$id": "Applied",
+            "foregroundColor": {
+              "solid": {
+                "color": "#1F2A33"
+              }
+            }
+          },
+          {
+            "$id": "Available",
+            "backgroundColor": {
+              "solid": {
+                "color": "#F4F7F8"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "slicer": {
+      "*": {
+        "items": [
+          {
+            "background": {
+              "solid": {
+                "color": "#F4F7F8"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "page": {
+      "*": {
+        "outspace": [
+          {
+            "color": {
+              "solid": {
+                "color": "#F4F7F8"
+              }
+            }
+          }
+        ],
+        "background": [
+          {
+            "transparency": 0
+          }
+        ]
+      }
+    }
+  }
+}
