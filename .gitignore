@@ -28,3 +28,4 @@ dbt_packages/
 .DS_Store
 Thumbs.db
 .vscode/
+~$* 
