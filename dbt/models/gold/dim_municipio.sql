@@ -17,11 +17,19 @@
 -- Sudeste/Sul) — já vem pronta da Base dos Dados, sem seed novo (adendo
 -- ADR 0009, 24/08/2026).
 --
--- nome_municipio, nome_regiao e populacao ficam nulos só pros membros especiais
+-- nome_municipio e populacao ficam nulos pros membros especiais
 -- ('ESTRANGEIRO'/'SEM INFORMACAO' não têm código IBGE de verdade pra
 -- casar com a Base dos Dados) — pra município real, agora vêm
 -- preenchidos. Se algum município real não casar (código descontinuado,
 -- por exemplo), também fica nulo — checar após o build.
+--
+-- nome_regiao NÃO fica nulo pros membros especiais (achado real,
+-- pedido da Giovanna — 6º refinamento ADR 0009): 'ESTRANGEIRO' e 'SEM
+-- INFORMACAO' não têm região de verdade pra preencher, mas deixar nulo
+-- lia como join quebrado no Power BI. Repetimos o próprio valor de uf
+-- (que já é 'ESTRANGEIRO'/'SEM INFORMACAO' nesses casos) em nome_regiao,
+-- deixando explícito que a região é a mesma categoria especial, não uma
+-- macro-região real do Brasil.
 --
 -- ano_populacao: qual ano a estimativa de populacao realmente veio (nem
 -- sempre 2025 — stg_ibge__municipios usa o ano mais recente disponível
@@ -85,7 +93,15 @@ select
     s.municipio_cobertura                              as codigo_ibge,
     s.uf_cobertura                                      as uf,
     coalesce(i.nome_municipio, b.nome_municipio)        as nome_municipio,
-    coalesce(i.nome_regiao, b.nome_regiao, ur.nome_regiao) as nome_regiao,
+    coalesce(
+        i.nome_regiao,
+        b.nome_regiao,
+        ur.nome_regiao,
+        case
+            when s.uf_cobertura in ('SEM INFORMACAO', 'ESTRANGEIRO')
+                then s.uf_cobertura
+        end
+    )                                                    as nome_regiao,
     coalesce(i.populacao, b.populacao)                  as populacao,
     coalesce(i.ano_populacao, b.ano_populacao)          as ano_populacao,
     case

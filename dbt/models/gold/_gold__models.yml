@@ -64,7 +64,11 @@ models:
           Sul) — já vem pronta da Base dos Dados (adendo ADR 0009,
           24/08/2026). Preenchida via UF pros membros 'UF sem município
           específico' (não precisa saber o município pra saber a região).
-          Mesma regra de nome_municipio pros 5 códigos residuais.
+          Mesma regra de nome_municipio pros 5 códigos residuais. Pros
+          membros 'Sem informação'/'Estrangeiro', repete o próprio valor
+          de uf ('SEM INFORMACAO'/'ESTRANGEIRO') em vez de ficar nulo —
+          não existe região real pra esses casos, mas nulo lia como join
+          quebrado no Power BI (6º refinamento ADR 0009, 24/08/2026).
         tests:
           - not_null:
               config:

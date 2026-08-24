@@ -220,3 +220,35 @@ casos explicados agora, aceitar os 5 residuais como limitação documentada:
 - 5 códigos (0,09% dos ~5.600 principais) seguem sem nome/região — aceito
   como limitação, igual ao caso já documentado de Boa Esperança do
   Norte/MT.
+
+## Sexto refinamento (24/08/2026) — nome_regiao nulo pros membros especiais
+
+Pedido da Giovanna: `nome_regiao` ficava vazio pros dois membros especiais
+da dimensão — `chave_municipio = 'SEM INFORMACAO'` e `chave_municipio =
+'ESTRANGEIRO'` — porque a CTE `uf_regiao` (usada como fallback de região
+por UF, criada no 5º refinamento) faz `join` por `sigla_uf = uf_cobertura`,
+e nenhuma delas é uma sigla de UF real, então nunca casava com o
+diretório do IBGE. Diferente dos casos do 5º refinamento (Regiões
+Administrativas do DF, sentinelas "UF+0000"), aqui não existe região
+geográfica nenhuma pra resolver — são categorias de "não é Brasil" ou
+"não sabemos onde" —, então nulo até fazia sentido semanticamente, mas
+lia como join quebrado num relatório de Power BI (mesmo risco de
+confusão do 2º refinamento, só que numa coluna diferente).
+
+**Decisão:** em vez de nulo, `nome_regiao` repete o próprio valor de `uf`
+para esses dois membros — ou seja, fica `'SEM INFORMACAO'`/`'ESTRANGEIRO'`
+também em `nome_regiao`, não uma macro-região real do Brasil. Implementado
+como mais um `coalesce` no `select` de `dim_municipio`, sem precisar de
+join novo nem de seed.
+
+**Consequências:**
+- `nome_regiao` deixa de ser nulo pra qualquer linha de `dim_municipio` —
+  os únicos campos que continuam nulos pros membros especiais são
+  `nome_municipio` e `populacao` (não têm equivalente sensato pra repetir).
+- Nenhum teste mudou: o `not_null` de `nome_regiao` já era escopado a
+  `where: tipo_registro = 'Município válido'`, que nunca incluiu os
+  membros especiais — o comportamento dos testes automatizados não é
+  afetado por essa mudança.
+- Zero custo adicional — é lógica pura de `CASE`/`COALESCE` em cima de
+  colunas já presentes na consulta, sem novo join nem novo bytes
+  escaneados de fonte externa.
