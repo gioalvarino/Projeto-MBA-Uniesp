@@ -56,6 +56,16 @@ informação que na verdade temos.
 Ver `docs/adr/0007-geografia-de-cobertura-municipio-residencia.md` pro
 raciocínio completo e os números reais que embasaram a regra.
 
+**Região (adendo ADR 0009, 24/08/2026):** `dim_municipio.nome_regiao`
+(macro-região Norte/Nordeste/Centro-Oeste/Sudeste/Sul) já vem pronta na
+mesma tabela da Base dos Dados usada pra nome/população de município
+(`br_bd_diretorios_brasil.municipio`) — não precisou criar seed novo. Nome
+real da coluna na fonte: **`nome_regiao`** (confirmado via
+`INFORMATION_SCHEMA.COLUMNS` em 24/08/2026, depois que um `dbt build` real
+falhou por causa de um nome de coluna errado — `regiao` — baseado num
+tutorial externo desatualizado/referente a outra tabela; ver 4º
+refinamento do ADR 0009 pro relato completo).
+
 ## Perfil demográfico — raça/cor e sexo (adendo ADR 0008, 23/08/2026)
 
 Resolvido na silver em três campos novos — `raca_cor_cobertura`,
@@ -198,6 +208,30 @@ mesmo problema que levou ao grão mensal da fato).
 - `no_fantasia_estalecimento` — o typo é da própria fonte (confirmado no
   CSV real, não é sanitização nossa). Mantido cru na bronze (fidelidade ao
   dado original), renomear só na silver.
+
+## Meta de cobertura vacinal (seed de referência, ADR 0010, 24/08/2026)
+
+`dbt/seeds/meta_vacinal.csv` traz a meta oficial de cobertura das 19
+vacinas do calendário infantil do PNI. A meta é nacional única — não varia
+por estado/município, só a cobertura *alcançada* varia. Fontes consultadas
+em 24/08/2026:
+
+- Portal Médico/CFM — ["Brasil não cumpre meta de 95% em cobertura
+  vacinal"](https://portal.cfm.org.br/noticias/vacinacao-precisa-avancar-para-seja-alcancada-a-meta-urgente-de-cobertura-vacinal-acima-de-95/)
+- APM — ["Brasil atingiu meta em apenas 3 das 19 vacinas para o público
+  infantil"](https://www.apm.org.br/brasil-atingiu-meta-em-apenas-3-das-19-vacinas-para-o-publico-infantil-especialistas-apontam-risco/)
+  (lista completa das 19 vacinas com a meta de cada uma, usada linha a
+  linha no seed)
+- SSIR — ["VacinaBR: as metas no mapa"](https://ssir.com.br/as-metas-no-mapa/)
+
+São fontes jornalísticas/de análise em saúde pública que citam dados do
+PNI/Ministério da Saúde, não a portaria oficial em si — vale confirmar
+contra o painel ImunizaSUS do Ministério da Saúde antes da apresentação
+final, se a banca cobrar a fonte primária.
+
+**Pendência:** o seed ainda não tem join com `dim_vacina` — os nomes das 19
+vacinas do calendário não batem string-a-string com os ~90 valores reais de
+`ds_nome` (ver seção acima). Ver ADR 0010 para detalhes.
 
 ## Volume real (arquivos baixados em 22/08/2026, jan–jul/2026)
 

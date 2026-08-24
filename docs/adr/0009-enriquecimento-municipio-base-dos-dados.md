@@ -112,3 +112,111 @@ bug ter passado despercebido por um build inteiro. Pendente: revalidar com
 - Diferente de `co_vacina`/`co_dose_vacina`/`co_estrategia_vacinacao`, esse
   de-para não depende de uma tabela oficial pendente do PNI — a Base dos
   Dados já resolve nome e população de município de forma completa.
+
+## Terceiro refinamento (24/08/2026) — macro-região do Brasil
+
+Pedido: acrescentar a região (Norte/Nordeste/Centro-Oeste/Sudeste/Sul) em
+`dim_municipio`, pra permitir corte regional além de UF/município.
+
+Antes de criar um seed novo (padrão `uf_ibge.csv`), checamos se a própria
+fonte já não trazia essa informação — e trazia: a tabela
+`basedosdados.br_bd_diretorios_brasil.municipio` (a mesma já usada em
+`stg_ibge__municipios` pra nome/UF) tem uma coluna `regiao` nativa.
+Confirmado num exemplo de consulta publicado pela própria Base dos Dados
+([artigo oficial no dev.to](https://dev.to/basedosdados/entenda-como-nossa-base-de-diretorios-brasileiros-facilita-sua-vida-27ji),
+consultado 24/08/2026) que faz `SELECT ... regiao ... FROM
+basedosdados.br_bd_diretorios_brasil.municipio` — confirma o nome exato da
+coluna nessa mesma tabela.
+
+**Decisão:** sem seed novo. `stg_ibge__municipios` passa a expor a
+macro-região (`nome_regiao`) e `dim_municipio` expõe a mesma coluna. Zero
+custo adicional — é a mesma tabela pública já consultada, só mais uma
+coluna no SELECT.
+
+**Pendente (na época):** a grafia exata dos 5 valores (acentos, hífen em
+"Centro-Oeste") ainda não foi confirmada contra o dado real — o teste
+`accepted_values` em `stg_ibge__municipios.nome_regiao` está em `warn` até
+o próximo `dbt build` confirmar.
+
+## Quarto refinamento (24/08/2026) — correção do nome real da coluna-fonte
+
+O `dbt build` de 24/08/2026 (rodando `stg_ibge__municipios` já com a coluna
+de região) falhou com `Unrecognized name: regiao` — a hipótese deste ADR
+("a coluna se chama `regiao` na fonte, confirmado pelo tutorial da Base dos
+Dados") estava errada. Giovanna rodou uma consulta direta de metadados
+(`INFORMATION_SCHEMA.COLUMNS`, custo irrisório — é metadado, não dado) contra
+`basedosdados.br_bd_diretorios_brasil.municipio` e confirmou o schema real:
+a coluna já se chama **`nome_regiao`** na própria fonte (não `regiao`) —
+o tutorial externo usado como referência estava desatualizado ou se referia
+a uma versão/tabela diferente do dataset.
+
+**Correção:** `stg_ibge__municipios` passa a fazer `select nome_regiao`
+direto (sem `as`, já que o nome de origem e o nome usado no projeto
+coincidem). Nenhuma outra mudança necessária — `dim_municipio` já
+referenciava `nome_regiao` (o nome de saída, que não mudou).
+
+**Lição registrada:** confirmar schema real via `INFORMATION_SCHEMA` antes
+de confiar em documentação/tutorial de terceiros pra nome de coluna, mesmo
+quando a fonte parece autoritativa (nesse caso, o próprio blog oficial da
+Base dos Dados).
+
+## Quinto refinamento (24/08/2026) — 45 municípios sem join após carga dos 7 meses completos
+
+Primeiro `dbt build` de `dim_municipio` contra os 7 meses completos (antes
+só fevereiro tinha sido validado): 45 códigos com `tipo_registro =
+'Município válido'` ficaram sem `nome_municipio`/`nome_regiao` — a falha
+de teste (severity error) acusou o problema, exatamente a intenção dos
+testes adicionados no 2º refinamento. Investigação via consulta direta em
+`dim_municipio` (barata — só 5,6 mil linhas) revelou 2 padrões claros nos
+45 códigos:
+
+1. **31 códigos são Regiões Administrativas do Distrito Federal**
+   (`530020`–`530135`, `539901`–`539934`): o DATASUS/SUS usa código
+   próprio pra cada Região Administrativa do DF (Taguatinga, Ceilândia,
+   Samambaia, Águas Claras etc.) — uso comum em dados de saúde do DF, já
+   que os serviços são organizados por RA. O IBGE, porém, reconhece o DF
+   como **um único município legal** (Brasília, `5300108`) — nenhuma RA é
+   município separado, por isso nenhuma bate com a Base dos Dados.
+2. **9 códigos terminam em `'0000'`** (`210000` MA, `230000` CE, `260000`
+   PE, `290000` BA, `310000` MG, `320000` ES, `350000` SP, `410000` PR,
+   `420000` SC) — um por estado, sem repetição. Padrão de sentinela do
+   DATASUS pra "UF conhecida, município não informado" (mesma família de
+   ideia do `999999`/`XX` já tratado no ADR 0007, só que codificado como
+   UF real + zeros em vez de um valor claramente inválido).
+
+Restam **5 códigos sem padrão identificado**: `430145` (RS) e
+`520100`/`520210`/`520900`/`520950` (GO). Não reconhecemos o padrão (podem
+ser municípios incorporados/renomeados ao longo do tempo, ou outro tipo de
+código regional de saúde específico de GO) — não investigado a fundo por
+causa do prazo até a apresentação (29/08/2026).
+
+**Decisão (pedido explícito da Giovanna, 24/08/2026):** corrigir os 40
+casos explicados agora, aceitar os 5 residuais como limitação documentada:
+
+- Regiões Administrativas do DF → `nome_municipio`/`nome_regiao`/
+  `populacao` preenchidos por aproximação, usando os dados de Brasília
+  (`id_municipio_6d = '530010'`) — `tipo_registro` vira `'Região
+  administrativa do DF (aprox. Brasília)'` pra deixar explícito que é
+  aproximação, não o nome real da RA.
+- Sentinelas "UF sem município" → `nome_regiao` preenchido só a partir da
+  UF (a região não depende do município específico — basta agrupar o
+  diretório do IBGE por `sigla_uf`); `nome_municipio` continua nulo (não
+  existe município real pra nomear). `tipo_registro` vira `'UF sem
+  município específico'`.
+- Os 5 residuais continuam com `tipo_registro = 'Município válido'` e
+  `nome_municipio`/`nome_regiao` nulos — mesmo tratamento do caso isolado
+  de Boa Esperança do Norte/MT (população nula): teste de `not_null`
+  rebaixado de error pra warn, documentado como limitação aceita.
+
+## Consequências (5º refinamento)
+
+- `dim_municipio.tipo_registro` ganha 2 valores novos — qualquer análise
+  em Power BI que filtre por "Município válido" precisa decidir se inclui
+  ou não as Regiões Administrativas do DF (que representam doses reais
+  aplicadas, só não distinguidas entre si).
+- A cobertura vacinal do DF fica agregada num único "município"
+  (Brasília) em vez de 31 — perda de granularidade dentro do DF, mas sem
+  perder nenhuma dose do cálculo geral.
+- 5 códigos (0,09% dos ~5.600 principais) seguem sem nome/região — aceito
+  como limitação, igual ao caso já documentado de Boa Esperança do
+  Norte/MT.

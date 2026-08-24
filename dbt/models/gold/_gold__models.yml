@@ -17,7 +17,9 @@ models:
   - name: dim_municipio
     description: >
       Dimensão de município de cobertura (ADR 0007 + ADR 0008). Inclui
-      membros especiais pra 'ESTRANGEIRO' e 'SEM INFORMACAO'.
+      membros especiais pra 'ESTRANGEIRO', 'SEM INFORMACAO', 'Região
+      administrativa do DF (aprox. Brasília)' e 'UF sem município
+      específico' (5º refinamento ADR 0009, 24/08/2026).
       nome_municipio/populacao vêm da Base dos Dados/IBGE (ADR 0009), join
       por código de 6 dígitos (achado real 23/08/2026 — ver 2º refinamento
       do ADR 0009). Testes de not_null abaixo existem justamente pra pegar
@@ -32,23 +34,50 @@ models:
           - unique
           - not_null
 
+      - name: tipo_registro
+        description: >
+          'Município válido' | 'Sem informação' | 'Estrangeiro' | 'Região
+          administrativa do DF (aprox. Brasília)' | 'UF sem município
+          específico' — os dois últimos adicionados no 5º refinamento do
+          ADR 0009 (24/08/2026), pra separar municípios reais de códigos
+          DATASUS que não são município IBGE de verdade.
+
       - name: nome_municipio
         description: >
-          Nome do município (Base dos Dados/IBGE). Nulo só pros membros
-          especiais ('ESTRANGEIRO'/'SEM INFORMACAO') — qualquer município
-          real sem nome é sinal de falha no join (ver 2º refinamento do
-          ADR 0009).
+          Nome do município (Base dos Dados/IBGE). Nulo pros membros
+          especiais ('ESTRANGEIRO'/'SEM INFORMACAO'/'UF sem município
+          específico' — não existe nome de município pra preencher) e
+          preenchido com o nome de Brasília pras Regiões Administrativas
+          do DF (aproximação, ver 5º refinamento ADR 0009). Restam 5
+          códigos (430145/RS, 520100+520210+520900+520950/GO) sem padrão
+          identificado — limitação aceita, teste em warn (mesmo
+          tratamento do caso Boa Esperança do Norte/MT).
         tests:
           - not_null:
               config:
                 where: "tipo_registro = 'Município válido'"
+                severity: warn
+
+      - name: nome_regiao
+        description: >
+          Macro-região do Brasil (Norte, Nordeste, Centro-Oeste, Sudeste,
+          Sul) — já vem pronta da Base dos Dados (adendo ADR 0009,
+          24/08/2026). Preenchida via UF pros membros 'UF sem município
+          específico' (não precisa saber o município pra saber a região).
+          Mesma regra de nome_municipio pros 5 códigos residuais.
+        tests:
+          - not_null:
+              config:
+                where: "tipo_registro = 'Município válido'"
+                severity: warn
 
       - name: populacao
         description: >
           Estimativa populacional mais recente disponível (Base dos
           Dados/IBGE). Nulo pros membros especiais e pra 1 município
           conhecido sem estimativa em nenhum ano (Boa Esperança do
-          Norte/MT — ver ADR 0009); por isso severity warn, não error.
+          Norte/MT — ver ADR 0009), mais os 5 códigos residuais do 5º
+          refinamento; por isso severity warn, não error.
         tests:
           - not_null:
               config:

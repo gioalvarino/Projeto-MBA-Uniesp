@@ -1,0 +1,20 @@
+ordem,vacina,dose,meta_cobertura
+1,BCG,Dose única,0.90
+2,Hepatite B,Ao nascer (<30 dias),0.95
+3,Penta (DTP/Hib/Hepatite B),Esquema básico,0.95
+4,Pneumocócica 10,Esquema básico,0.95
+5,Pneumocócica 10,1º reforço,0.95
+6,VIP (Poliomielite inativada),Esquema básico,0.95
+7,Rotavírus,Esquema básico,0.90
+8,Meningocócica C,Esquema básico,0.95
+9,Meningocócica C,1º reforço,0.95
+10,VOP (Poliomielite oral),Reforço,0.95
+11,Febre amarela,Dose única/reforço,0.95
+12,Tríplice viral (SCR),1ª dose,0.95
+13,Tríplice viral (SCR),2ª dose,0.95
+14,Hepatite A,Dose única,0.95
+15,DTP,1º reforço,0.95
+16,Varicela,Dose única,0.95
+17,HPV,Esquema,0.90
+18,Meningocócica ACWY,Reforço adolescente,0.80
+19,Influenza,Campanha anual,0.90

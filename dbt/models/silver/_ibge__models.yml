@@ -32,6 +32,23 @@ models:
         tests:
           - not_null
 
+      - name: nome_regiao
+        description: >
+          Macro-região do Brasil (Norte, Nordeste, Centro-Oeste, Sudeste,
+          Sul) — coluna `nome_regiao` já vem pronta com esse nome exato na
+          Base dos Dados, sem precisar de seed novo (adendo ADR 0009,
+          24/08/2026; nome de coluna confirmado via INFORMATION_SCHEMA em
+          24/08/2026, corrigindo a hipótese inicial de que se chamava
+          `regiao`). Grafia dos valores (acentos/hífen) ainda não
+          confirmada contra o dado real — teste abaixo em warn até o
+          próximo `dbt build` validar.
+        tests:
+          - not_null
+          - accepted_values:
+              config:
+                severity: warn
+              values: ['Norte', 'Nordeste', 'Centro-Oeste', 'Sudeste', 'Sul']
+
       - name: populacao
         description: >
           Estimativa populacional mais recente disponível (até 2025) por

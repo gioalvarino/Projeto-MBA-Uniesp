@@ -16,12 +16,15 @@ as novas dimensões tinha levado a fato a 49 milhões de linhas.
 - `dim_tempo` — calendário gerado, grão **mensal** (era diário até
   23/08/2026), cobre 2026 inteiro.
 - `dim_municipio` — geografia de cobertura (ADR 0007), com membros
-  especiais pra `ESTRANGEIRO`/`SEM INFORMACAO`. `nome_municipio` e
-  `populacao` já vêm da Base dos Dados/IBGE (`stg_ibge__municipios` — ADR
-  0004 + ADR 0009, implementado em 23/08/2026), nulos só pros membros
-  especiais. Join corrigido em 23/08/2026 pra usar código de 6 dígitos
-  (`id_municipio_6d`), não 7 — o join original não batia com nenhum
-  município real (2º refinamento do ADR 0009).
+  especiais pra `ESTRANGEIRO`/`SEM INFORMACAO`. `nome_municipio`,
+  `nome_regiao` e `populacao` já vêm da Base dos Dados/IBGE
+  (`stg_ibge__municipios` — ADR 0004 + ADR 0009, implementado em
+  23/08/2026), nulos só pros membros especiais. Join corrigido em
+  23/08/2026 pra usar código de 6 dígitos (`id_municipio_6d`), não 7 — o
+  join original não batia com nenhum município real (2º refinamento do ADR
+  0009). `nome_regiao` (macro-região Norte/Nordeste/Centro-Oeste/Sudeste/
+  Sul) acrescentada em 24/08/2026 — já vinha pronta na mesma tabela da Base
+  dos Dados, sem seed novo (3º refinamento do ADR 0009).
 - `dim_vacina` — códigos de vacina/dose. `nome_vacina`/`nome_dose`
   resolvidos direto da fonte (`ds_nome`/`ds_tipo_dose`) em 23/08/2026 —
   sem de-para externo pendente (ver adendo do ADR 0008).
@@ -35,6 +38,9 @@ as novas dimensões tinha levado a fato a 49 milhões de linhas.
   Coluna de rótulo é `nome_faixa_etaria` (renomeada de `faixa_etaria` em
   23/08/2026 — nome de coluna igual ao nome da tabela fazia o conector do
   Power BI mostrar `[Record]` em vez do texto).
+- `meta_vacinal` (seed, não model) — meta oficial de cobertura das 19
+  vacinas do calendário infantil do PNI (ADR 0010, 24/08/2026). Ainda **sem
+  join** com `dim_vacina` — ver pendência abaixo.
 
 **Decisão explícita:** sem dimensão de estabelecimento (onde a dose foi
 aplicada) — o modelo foca só na geografia de residência (cobertura). Isso
@@ -46,6 +52,10 @@ refina o desenho original do ADR 0004. Ver ADR 0008 pro raciocínio.
   seguimos sem elas por enquanto, por causa do risco de cardinalidade alta
   (mesmo problema que levou ao grão mensal da fato); implementa depois se
   a necessidade aparecer.
+- De-para entre `meta_vacinal` (19 nomes oficiais do calendário) e
+  `dim_vacina` (~90 variações reais de `ds_nome`) — ver ADR 0010. Sem isso,
+  a meta é só referência solta no Power BI, não uma medida calculada
+  automaticamente por vacina.
 
 Validado com `dbt build` contra os 7 meses reais completos, já com o
 enriquecimento IBGE (com o join corrigido) e o grão mensal (23/08/2026):

@@ -21,6 +21,17 @@
 -- antes (esse era um problema diferente, isolado, da Base dos Dados em si
 -- — ver comentário abaixo). id_municipio_6d trunca o 7º dígito
 -- (verificador) da Base dos Dados pra casar com o formato do PNI.
+--
+-- nome_regiao (adendo ADR 0009, 24/08/2026, CORRIGIDO em 24/08/2026): a
+-- própria Base dos Dados já traz a macro-região (Norte/Nordeste/Centro-
+-- Oeste/Sudeste/Sul) na tabela de diretório de município — não precisou de
+-- seed novo. Achado real: o nome da coluna na fonte já É `nome_regiao`
+-- (confirmado via INFORMATION_SCHEMA.COLUMNS, 24/08/2026) — a hipótese
+-- inicial (baseada num tutorial externo da Base dos Dados) era de que a
+-- coluna se chamava `regiao`, o que causou um erro real de "Unrecognized
+-- name: regiao" no primeiro dbt build após essa mudança. Lição: confirmar
+-- schema real via INFORMATION_SCHEMA antes de confiar em documentação/
+-- tutorial de terceiros, mesmo que pareça autoritativo.
 
 with diretorio as (
 
@@ -28,7 +39,8 @@ with diretorio as (
         id_municipio,
         substr(id_municipio, 1, 6) as id_municipio_6d,
         nome     as nome_municipio,
-        sigla_uf
+        sigla_uf,
+        nome_regiao
     from {{ source('bd_diretorios_brasil', 'municipio') }}
 
 ),
@@ -55,6 +67,7 @@ select
     d.id_municipio_6d,
     d.nome_municipio,
     d.sigla_uf,
+    d.nome_regiao,
     p.populacao,
     p.ano as ano_populacao
 

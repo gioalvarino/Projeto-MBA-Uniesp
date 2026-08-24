@@ -13,7 +13,12 @@ sources:
       - name: municipio
         description: >
           Um município por linha — id_municipio (código IBGE, 7 dígitos,
-          mesmo formato de municipio_cobertura na silver), nome, sigla_uf.
+          mesmo formato de municipio_cobertura na silver), nome, sigla_uf,
+          nome_regiao (macro-região do Brasil — confirmado que já vem pronta
+          nessa tabela com esse nome exato, sem precisar de seed novo;
+          adendo ADR 0009, 24/08/2026, nome de coluna corrigido em
+          24/08/2026 via INFORMATION_SCHEMA — ver 4º refinamento do ADR
+          0009).
 
   - name: bd_ibge_populacao
     database: basedosdados

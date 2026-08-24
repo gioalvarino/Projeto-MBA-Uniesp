@@ -51,3 +51,37 @@ seeds:
         tests:
           - unique
           - not_null
+
+  - name: meta_vacinal
+    description: >
+      Referência fixa das 19 vacinas do calendário infantil do PNI e sua
+      meta oficial de cobertura (ADR 0010) — 95% pra maioria dos
+      imunizantes, 90% pra BCG/rotavírus/HPV/influenza, 80% pra
+      meningocócica ACWY. A meta é nacional única (não varia por
+      estado/município — só a cobertura alcançada varia).
+
+      IMPORTANTE (ver ADR 0010): esta tabela usa os nomes oficiais do
+      calendário nacional, que NÃO batem string-a-string com
+      `dim_vacina.nome_vacina`/`nome_dose` (que vêm direto do `ds_nome`
+      bruto do PNI, ex.: "vacina febre amarela (atenuada)"). Ainda não
+      existe join entre as duas — falta um de-para manual, igual foi feito
+      pra co_vacina/co_dose_vacina, pra ligar as ~90 variações reais às 19
+      linhas aqui. Por enquanto é só uma referência solta pro Power BI
+      (ex.: linha de meta fixa nos gráficos), não uma dimensão ligada à
+      fato.
+    columns:
+      - name: ordem
+        description: Ordem de exibição (segue a ordem do calendário nacional).
+        tests:
+          - unique
+          - not_null
+      - name: vacina
+        description: Nome oficial da vacina no calendário nacional do PNI.
+        tests:
+          - not_null
+      - name: dose
+        description: Dose/esquema a que a meta se aplica (ex. "1º reforço").
+      - name: meta_cobertura
+        description: Meta oficial de cobertura, fração de 0 a 1 (0.95 = 95%).
+        tests:
+          - not_null
