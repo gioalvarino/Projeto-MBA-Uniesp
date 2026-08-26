@@ -74,3 +74,24 @@ secret `GCP_SA_KEY` (não a partir do arquivo do repo).
 - Assim como toda a documentação do projeto, este ADR e a estrutura do dbt
   foram criados incrementalmente, junto com o primeiro model real (ver
   `models/silver/stg_pni__doses_aplicadas.sql`), não deixados pro final.
+
+## Adendo (26/08/2026) — CI nunca tinha rodado um `dbt build` de verdade
+
+Achado real: Ellen e Andressa não conseguiam ver nenhuma tabela em
+`gold` — só existiam em `dev_giovanna`. Isso não é falha do desenho acima
+(que continua correto): é porque `.github/workflows/pipeline.yml` (o único
+lugar com permissão de escrita em `silver`/`gold`) ficou rodando só `dbt
+debug` + `dbt compile` desde que foi criado — um placeholder de quando a
+bronze ainda não tinha dado real, nunca atualizado depois que os 7 meses
+foram carregados (item já registrado como pendência de baixa prioridade).
+Ou seja: o mecanismo pra publicar no compartilhado sempre existiu e estava
+certo, só nunca tinha sido de fato acionado.
+
+Corrigido: o workflow agora roda `dbt build` (não só debug/compile).
+Também removido o gatilho de agendamento diário (`schedule: cron`), ficando
+só o disparo manual (`workflow_dispatch`, botão "Run workflow" na aba
+Actions do GitHub) — não há mais carga nova prevista antes da apresentação
+de 29/08, então rodar todo dia sem necessidade só geraria custo à toa
+(regra do projeto de reduzir consultas que geram cobrança). Cada run é
+limitada por `maximum_bytes_billed` (10 GB) no profile do CI, mesma
+proteção de sempre.

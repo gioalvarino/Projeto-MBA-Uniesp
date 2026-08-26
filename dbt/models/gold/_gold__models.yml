@@ -200,3 +200,30 @@ models:
         description: Contagem de doses aplicadas na combinação de chaves da linha.
         tests:
           - not_null
+
+  - name: mart_cobertura_vacinal
+    description: >
+      Tabela larga (mart) denormalizada, criada especificamente pro Looker
+      Studio (ADR 0011, 26/08/2026): junta fct_cobertura_vacinal com as 5
+      dimensões via left join, mesmo grão da fato. Não substitui o modelo
+      estrela (fato + dimensões) — é um model adicional, pensado pra ser
+      extraído de uma vez só pelo conector "Extract Data" do Looker Studio,
+      evitando Data Blending e consultas recorrentes contra o BigQuery. Sem
+      testes próprios de not_null/relationships: as chaves já são testadas
+      na fct_cobertura_vacinal (fonte deste model) — testar de novo aqui
+      seria duplicar a mesma verificação e gerar consulta extra à toa.
+    columns:
+      - name: mes_vacina
+        description: Mesma chave/coluna da fct_cobertura_vacinal.
+      - name: chave_municipio
+        description: Mesma chave da fct_cobertura_vacinal / dim_municipio.
+      - name: chave_vacina
+        description: Mesma chave da fct_cobertura_vacinal / dim_vacina.
+      - name: chave_faixa_etaria
+        description: Mesma chave da fct_cobertura_vacinal / faixa_etaria.
+      - name: chave_perfil
+        description: Mesma chave da fct_cobertura_vacinal / dim_perfil_paciente.
+      - name: chave_estrategia
+        description: Mesma chave da fct_cobertura_vacinal / dim_estrategia_vacinacao.
+      - name: qtd_doses
+        description: Métrica principal — mesma da fct_cobertura_vacinal.

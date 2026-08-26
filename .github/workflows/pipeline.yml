@@ -5,18 +5,26 @@ name: Pipeline dbt
 # `ingestion/load_pni_csv.py` (ver ADR 0002 sobre por que a ingestão não é
 # automatizada ainda: falta uma URL estável de download por mês).
 #
-# Estado atual (ver dbt/README.md): a bronze ainda não tem dado carregado
-# (nenhum CSV real foi processado ainda), então `dbt build`/`dbt run`
-# falhariam ao tentar materializar a view da silver contra uma tabela que
-# não existe. Por isso este job roda só `dbt debug` (testa autenticação e
-# conexão, usando o mesmo secret GCP_SA_KEY já validado no workflow
-# teste-autenticacao-gcp.yml) e `dbt compile` (valida que os models/SQL
-# compilam). Trocar por `dbt build` de verdade assim que a bronze tiver
-# dados.
+# Atualizado em 26/08/2026 (ver adendo do ADR 0006): até aqui este job só
+# rodava `dbt debug` + `dbt compile` — placeholder de quando a bronze
+# ainda não tinha dado carregado. Com os 7 meses reais já na bronze, isso
+# tinha uma consequência não percebida: ninguém do trio conseguia ver as
+# tabelas gold, porque só a service account deste workflow (target `ci`)
+# tem permissão de escrita nos datasets compartilhados silver/gold (ADR
+# 0006) — e este job nunca tinha rodado um `dbt build` de verdade. Cada
+# `dbt build` local só escreve no dev_<nome> de quem rodou, por desenho.
+#
+# Agora roda `dbt build` de verdade — é o único jeito de publicar no
+# silver/gold compartilhado, pra Ellen e Andressa também enxergarem as
+# tabelas (inclusive a `mart_cobertura_vacinal` nova, usada pelo Looker
+# Studio). Gatilho por agendamento diário removido de propósito: não há
+# mais carga nova prevista antes da apresentação (29/08), e cada run
+# processa uma consulta real (com custo, ainda que pequeno e limitado por
+# maximum_bytes_billed) — rodar todo dia sem necessidade vai contra a
+# regra do projeto de reduzir ao máximo consultas que geram cobrança.
+# Ficou só o botão manual (workflow_dispatch, aba Actions do GitHub).
 
 on:
-  schedule:
-    - cron: "0 12 * * *" # ajustar para a cadência que o trio decidir
   workflow_dispatch: {}
 
 jobs:
@@ -58,16 +66,10 @@ jobs:
                 keyfile: "$RUNNER_TEMP/gcp-sa-key.json"
           EOF
 
-      - name: dbt debug (testa autenticação e conexão)
+      - name: dbt build (publica de verdade no silver/gold compartilhado)
         working-directory: dbt
-        run: dbt debug --profiles-dir "$RUNNER_TEMP/dbt_profile"
+        run: dbt build --profiles-dir "$RUNNER_TEMP/dbt_profile"
 
-      - name: dbt compile (valida os models sem precisar de dado na bronze)
-        working-directory: dbt
-        run: dbt compile --profiles-dir "$RUNNER_TEMP/dbt_profile"
-
-      # TODO: trocar os dois passos acima por `dbt build --profiles-dir ...`
-      # assim que a bronze tiver dados carregados (ver dbt/README.md).
       - name: dbt docs generate
         run: |
           echo "TODO: dbt docs generate (depois que dbt build estiver ativo)"
