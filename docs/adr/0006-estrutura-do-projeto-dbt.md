@@ -93,5 +93,22 @@ só o disparo manual (`workflow_dispatch`, botão "Run workflow" na aba
 Actions do GitHub) — não há mais carga nova prevista antes da apresentação
 de 29/08, então rodar todo dia sem necessidade só geraria custo à toa
 (regra do projeto de reduzir consultas que geram cobrança). Cada run é
-limitada por `maximum_bytes_billed` (10 GB) no profile do CI, mesma
-proteção de sempre.
+limitada por `maximum_bytes_billed` no profile do CI, mesma proteção de
+sempre.
+
+## Adendo (26/08/2026, 2) — primeira run real falhou por limite baixo demais
+
+A primeira run com `dbt build` de verdade (run #8) falhou: dois testes
+`not_null` na silver (`stg_pni__doses_aplicadas`) precisaram de ~10 GB e
+~14,14 GB, estourando o `maximum_bytes_billed` de 10 GB que o profile `ci`
+tinha até então. Como um teste que falha derruba (SKIP) tudo que depende
+dele no `dbt build`, essa run não publicou nenhuma das 7 tabelas gold no
+dataset compartilhado — o mesmo motivo, então, pelo qual Ellen e Andressa
+ainda não viam nada em `gold` mesmo depois do fix acima.
+
+Este é exatamente o mesmo problema (e mesma causa: a silver é uma view que
+recomputa a transformação inteira dos 7 meses reais a cada teste) já
+resolvido no profile `dev` em 23/08/2026 — só que a correção não tinha sido
+replicada no profile `ci`. Corrigido: `maximum_bytes_billed` do profile
+`ci` (dentro de `.github/workflows/pipeline.yml`) subido de 10 GB para
+20 GB, igualando o `dev`.

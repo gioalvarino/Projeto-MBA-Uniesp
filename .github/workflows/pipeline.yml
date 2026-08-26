@@ -23,6 +23,13 @@ name: Pipeline dbt
 # maximum_bytes_billed) — rodar todo dia sem necessidade vai contra a
 # regra do projeto de reduzir ao máximo consultas que geram cobrança.
 # Ficou só o botão manual (workflow_dispatch, aba Actions do GitHub).
+#
+# Atualizado em 26/08/2026 (2): a primeira run real (#8) falhou — dois
+# testes not_null na silver precisaram de ~10 GB e ~14,14 GB, estourando
+# o limite de maximum_bytes_billed de 10 GB deste profile `ci`. Como um
+# teste falho derruba (SKIP) tudo que depende dele, isso zerou a
+# publicação das 7 tabelas gold nessa run. Subido para 20 GB abaixo —
+# o mesmo ajuste já feito no profile `dev` em 23/08 pelo motivo idêntico.
 
 on:
   workflow_dispatch: {}
@@ -62,7 +69,7 @@ jobs:
                 threads: 4
                 location: US
                 priority: batch
-                maximum_bytes_billed: 10000000000
+                maximum_bytes_billed: 20000000000
                 keyfile: "$RUNNER_TEMP/gcp-sa-key.json"
           EOF
 
