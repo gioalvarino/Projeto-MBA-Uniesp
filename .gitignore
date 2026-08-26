@@ -28,4 +28,9 @@ dbt_packages/
 .DS_Store
 Thumbs.db
 .vscode/
-~$* 
+~$*
+
+# Roteiro de apresentação - fica de fora do controle de versão de propósito
+# (pedido da Giovanna, 24/08/2026). Comitado por engano em 26/08/2026
+# (comando git rodado da pasta errada) e removido do tracking em seguida.
+apresentacao/roteiro-apresentacao-pni.docx
