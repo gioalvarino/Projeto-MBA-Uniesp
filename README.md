@@ -48,9 +48,8 @@ visualização.
 
 | Frente | Responsável | Entregáveis |
 |---|---|---|
-| Engenharia | Giovanna | ingestão, projeto dbt, GitHub Actions, IAM/BigQuery |
-| Dados e qualidade | Andressa | modelos SQL silver/gold, testes em YAML, dicionário de dados |
-| Consumo e narrativa | Ellen | modelo estrela, Looker Studio, ADRs, README, apresentação |
+| Engenharia e dados | Giovanna | ingestão, projeto dbt (models silver/gold, testes, seeds), modelo estrela, GitHub Actions, IAM/BigQuery, dicionário de dados, ADRs, README |
+| Consumo e narrativa | Ellen e Andressa | dashboard no Looker Studio (4 páginas: Visão Geral, Análise Territorial, Perfil da População, Sazonalidade & Oportunidades — filtros, gráficos e cartões conectados direto na gold), apresentação |
 
 Regra combinada: ninguém faz merge de código que não sabe explicar.
 
