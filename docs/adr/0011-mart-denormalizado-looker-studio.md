@@ -90,3 +90,49 @@ Data"** (não o conector "BigQuery" direto) — ver guia de migração
   ignorado sem custo nenhum — ele não interfere no modelo estrela existente.
 - Sem custo de BigQuery adicional pra criar o model em si: é só mais uma
   consulta de transformação dentro da cota diária já usada pelo `dbt build`.
+
+## Adendo (27/08/2026) — Extract Data abandonado; conexão direta é a decisão final
+
+O conector "Extract Data" escolhido acima **não deu certo na prática**: duas
+tentativas de extrair `mart_cobertura_vacinal` (16.150.756 linhas, 4,08 GB)
+falharam com erro genérico de volume. Diagnóstico real: o Extract Data tem
+teto próprio de **100 MB / 750.000 linhas** por extração (documentação
+oficial do Google, [Extract Data for faster
+performance](https://docs.cloud.google.com/data-studio/extract-data-for-faster-performance))
+— não é um limite de custo, é um teto de tamanho do arquivo que ele guarda
+dentro do Looker Studio. Mesmo agregando a um grão mais alto
+(`mart_cobertura_vacinal_resumo`, município + vacina + mês + faixa etária,
+5.039.793 linhas) o resultado ainda ficou muito acima do teto.
+
+Isso levou a uma reavaliação completa da preocupação de custo do "Contexto"
+acima (que citava um relato genérico de fatura alta com Looker Studio +
+BigQuery). Apurado com números reais deste projeto e a documentação oficial
+do conector (["Manage data
+freshness"](https://docs.cloud.google.com/looker/docs/studio/manage-data-freshness)):
+BigQuery cobra US$ 6,25 por TiB processado no modo on-demand, com o primeiro
+1 TiB grátis por mês; a mart inteira tem 4,08 GB (~0,004 TiB) — precisaria de
+mais de 250 varreduras completas num mês só pra sair do TiB grátis. Além
+disso, com a fonte de dados usando **"Owner's Credentials"** (a conta da
+Giovanna, que é o padrão de uma conexão pessoal, sem service account), o
+cache de 12h é **compartilhado entre todos os viewers do relatório** — uma
+pessoa "esquenta" o cache e as outras não geram consulta nova. Pro uso deste
+projeto (três pessoas, poucas interações, período curto até a apresentação),
+o custo de conexão direta é, na prática, zero.
+
+**Decisão revista:** abandonar o conector "Extract Data" e conectar o Looker
+Studio **direto** (conexão nativa ao BigQuery, credenciais da Giovanna) em
+`mart_cobertura_vacinal` — sem o teto de linhas do Extract, então nem
+precisou usar a versão agregada (`mart_cobertura_vacinal_resumo`, mantida no
+repositório mas sem uso atual — não deletada, pode servir de referência ou
+uso futuro). O Power BI fica definitivamente descartado como ferramenta de
+consumo (motivo original já registrado no Contexto: não roda no Linux da
+Ellen) — o Looker Studio, com conexão direta, é a ferramenta final.
+
+**Consequência sobre o modelo estrela:** `fct_cobertura_vacinal` + as 5
+dimensões continuam existindo, testadas e válidas na gold (nenhum arquivo
+alterado) — mas **não são o que o dashboard consome**. O Looker Studio não
+tem modelagem relacional (ver item 1 do "Contexto" original), então quem
+alimenta os gráficos é sempre a tabela larga `mart_cobertura_vacinal`. O
+modelo estrela fica como o desenho "correto" da gold e uma porta aberta pra
+um Power BI futuro, mas deixou de ser, na prática, o caminho até a
+visualização deste projeto.

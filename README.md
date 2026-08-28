@@ -2,7 +2,10 @@
 
 Projeto de pós-graduação (trio) que transforma os CSVs mensais de doses aplicadas
 do PNI (Programa Nacional de Imunizações) em um dashboard de cobertura vacinal,
-com arquitetura medalhão no BigQuery, transformação em dbt e consumo em Power BI.
+com arquitetura medalhão no BigQuery, transformação em dbt e consumo em Looker
+Studio (Google Data Studio) — ver adendo 27/08/2026 do ADR 0011: o Power BI foi
+avaliado no início do projeto, mas abandonado como ferramenta de consumo (não
+roda no Linux de um dos integrantes do trio).
 
 ## Pipeline
 
@@ -12,7 +15,17 @@ com arquitetura medalhão no BigQuery, transformação em dbt e consumo em Power
 
 CSVs mensais do PNI → `ingestion/load_pni_csv.py` (load job, bronze particionada
 por mês) → BigQuery bronze/silver/gold (dbt-bigquery) → GitHub Actions
-(orquestração do dbt) → Power BI Desktop (consumo).
+(orquestração do dbt) → Looker Studio, conectado direto (sem Extract Data) na
+tabela larga `mart_cobertura_vacinal` (consumo).
+
+A gold mantém o modelo estrela de verdade (`fct_cobertura_vacinal` + 5
+dimensões, ADR 0008) — testado e válido — mas quem alimenta o dashboard é a
+tabela larga denormalizada `mart_cobertura_vacinal` (ADR 0011): o Looker
+Studio não tem modelagem relacional (não dá pra definir relação fato ↔
+dimensão como no Power BI), então cada linha da mart já vem com o nome de
+todas as dimensões. O modelo estrela segue existindo como desenho correto da
+gold e porta aberta pra um Power BI futuro, mas não é o caminho atual até a
+visualização.
 
 ## Estrutura do repositório
 
@@ -37,7 +50,7 @@ por mês) → BigQuery bronze/silver/gold (dbt-bigquery) → GitHub Actions
 |---|---|---|
 | Engenharia | Giovanna | ingestão, projeto dbt, GitHub Actions, IAM/BigQuery |
 | Dados e qualidade | Andressa | modelos SQL silver/gold, testes em YAML, dicionário de dados |
-| Consumo e narrativa | Ellen | modelo estrela, Power BI, DAX, ADRs, README, apresentação |
+| Consumo e narrativa | Ellen | modelo estrela, Looker Studio, ADRs, README, apresentação |
 
 Regra combinada: ninguém faz merge de código que não sabe explicar.
 
@@ -47,9 +60,11 @@ Regra combinada: ninguém faz merge de código que não sabe explicar.
   final feito fora do controle de versão.
 - A documentação (`docs/`) evolui junto com o projeto: cada decisão relevante
   vira um ADR no momento em que é tomada, não no fim do semestre.
-- `.pbix` é arquivo binário e não faz merge — uma dona por vez. Mesmo assim,
-  desde 24/08/2026 o arquivo passou a ser versionado no repositório (decisão
-  revista); a regra de "uma dona por vez" ao editar continua valendo.
+- O painel final vive no Looker Studio (nuvem, fora do repositório) — não há
+  mais arquivo binário (`.pbix`) pra versionar/mergear; o dashboard é editado
+  direto na conta Google da Giovanna. O que fica versionado aqui é o que
+  gera o dado que ele consome: os models dbt (inclusive `mart_cobertura_vacinal`,
+  ADR 0011) e as decisões em ADR.
 
 ## Controle de custo (BigQuery)
 
@@ -63,4 +78,7 @@ checklist completo no handoff do projeto.
 
 Ver `docs/adr/` para as decisões já tomadas e justificadas. Pendências
 abertas estão registradas em cada ADR relevante e serão fechadas ao longo do
-projeto.
+projeto. Mudança mais recente: troca da ferramenta de consumo de Power BI
+para Looker Studio, com conexão direta ao BigQuery (adendo 27/08/2026 do
+ADR 0011) — o modelo estrela da gold continua existindo, mas o dashboard
+consome a tabela larga `mart_cobertura_vacinal`, não o modelo dimensional.
