@@ -227,3 +227,31 @@ models:
         description: Mesma chave da fct_cobertura_vacinal / dim_estrategia_vacinacao.
       - name: qtd_doses
         description: Métrica principal — mesma da fct_cobertura_vacinal.
+
+  - name: mart_cobertura_vacinal_resumo
+    description: >
+      Versão resumida da mart_cobertura_vacinal (adendo ADR 0011,
+      26/08/2026): a versão original (16.150.756 linhas, 4,08 GB) é
+      grande demais pro conector "Extract Data" do Looker Studio (2
+      tentativas de extração falharam por volume). Este model agrega
+      qtd_doses por mes_vacina + chave_municipio + chave_vacina +
+      chave_faixa_etaria, somando através de raça/sexo/estratégia de
+      vacinação — dimensões que o painel principal não precisa detalhar
+      linha a linha. Não substitui a mart_cobertura_vacinal original nem
+      o modelo estrela — model adicional. Sem testes próprios: mesma
+      lógica da mart_cobertura_vacinal (chaves já testadas na
+      fct_cobertura_vacinal, fonte deste model).
+    columns:
+      - name: mes_vacina
+        description: Mesma chave/coluna da fct_cobertura_vacinal.
+      - name: chave_municipio
+        description: Mesma chave da fct_cobertura_vacinal / dim_municipio.
+      - name: chave_vacina
+        description: Mesma chave da fct_cobertura_vacinal / dim_vacina.
+      - name: chave_faixa_etaria
+        description: Mesma chave da fct_cobertura_vacinal / faixa_etaria.
+      - name: qtd_doses
+        description: >
+          Soma de qtd_doses através de raça/sexo/estratégia de
+          vacinação, agregada no grão desta tabela (município + vacina +
+          mês + faixa etária).
